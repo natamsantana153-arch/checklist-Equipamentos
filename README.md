@@ -1,0 +1,2 @@
+# checklist-Equipamentos
+checklist-empilhadeiras
