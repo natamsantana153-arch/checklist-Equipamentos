@@ -188,6 +188,24 @@ select:focus, input:focus, textarea:focus{ outline:none; border-color:var(--blue
 .photo-single .icon{ font-size:26px; opacity:0.6; }
 .photo-single .chk{ position:absolute; top:6px; right:6px; background:var(--teal); color:#00201c; width:20px; height:20px; border-radius:50%; font-size:12px; display:flex; align-items:center; justify-content:center; font-weight:700; }
 
+.photo-gallery{ display:grid; grid-template-columns:repeat(auto-fill, minmax(84px,1fr)); gap:8px; }
+.photo-thumb{ aspect-ratio:1; border-radius:8px; overflow:hidden; position:relative; border:1.5px solid var(--teal); background:var(--bg-panel-raised); }
+.photo-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+.photo-thumb .rm{
+  position:absolute; top:4px; right:4px; background:rgba(2,3,4,0.75); color:#fff;
+  width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:13px; cursor:pointer; line-height:1;
+}
+.photo-add{
+  aspect-ratio:1; border:1.5px dashed var(--line); border-radius:8px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  cursor:pointer; background:var(--bg-panel-raised);
+}
+.photo-add .icon{ font-size:20px; opacity:0.6; }
+.photo-add .lbl{ font-size:9.5px; color:var(--text-faint); text-align:center; padding:0 4px; line-height:1.2; }
+.photo-add.disabled{ opacity:0.4; cursor:not-allowed; }
+.photo-count{ font-size:11px; color:var(--text-faint); margin-top:6px; }
+
 .progress-bar{ height:4px; background:var(--line-soft); border-radius:2px; overflow:hidden; margin-bottom:16px; }
 .progress-fill{ height:100%; background:var(--blue2); transition:width 0.2s; }
 
@@ -308,6 +326,9 @@ select:focus, input:focus, textarea:focus{ outline:none; border-color:var(--blue
     <p class="sub" style="margin-bottom:14px;">Toque em um equipamento para retirar (checklist de saída) ou devolver (checklist de entrada).</p>
     <div class="filter-row">
       <input type="text" id="fleetSearch" placeholder="Buscar por código ou tipo..." oninput="renderFleet()">
+      <select id="fleetSectorFilter" onchange="renderFleet()">
+        <option value="all">Todos os setores</option>
+      </select>
       <select id="fleetStatusFilter" onchange="renderFleet()">
         <option value="all">Todos os status</option>
         <option value="livre">Disponível</option>
@@ -386,111 +407,220 @@ select:focus, input:focus, textarea:focus{ outline:none; border-color:var(--blue
 
 <script>
 /* ============================================================
-   DATA MODEL (persisted in localStorage)
-   - drivers: [{id,name,pin}]
-   - carts: [{id,label,type,status:'livre'|'uso'|'manutencao', currentDriverId, currentDriverName, lastLogTime}]
-   - logs: [{id,cartId,driverId,driverName,type:'retirada'|'entrega',time,statusGood,photo,problemDesc,motivoDevolucao,pegarOutro,notes}]
-   - occurrences: [{id,cartId,detectedTime,description,assignedDriverId,assignedDriverName,status,linkedLogId}]
+   MODELO DE DADOS
+   - drivers (operadores/PIN de login): guardado no localStorage do navegador.
+   - Frota, histórico e ocorrências: NÃO ficam no localStorage — são derivados
+     em tempo real dos registros lidos da Planilha Google via Apps Script
+     (CONFIG.API_URL). Ver funções apiListar/apiPost/syncFromBackend e
+     buildCarts/buildHistory/buildOccurrences.
 ============================================================ */
 
 const EQUIP_SEED = [
-["SK158","EMPILHADEIRA ELÉTRICA CONTRABALANÇADA (COM GIRADOR)"],
-["SK168","EMPILHADEIRA ELÉTRICA CONTRABALANÇADA (COM GIRADOR)"],
-["SK356","PALETEIRA ELÉTRICA"],
-["EMP-010","PALETEIRA ELÉTRICA"],
-["EMP-020","EMPILHADEIRA TRILATERAL"],
-["EMP-026","PALETEIRA ELÉTRICA"],
-["EMP-040","PALETEIRA ELÉTRICA"],
-["EMP-009","PALETEIRA ELÉTRICA"],
-["EMP-044","PALETEIRA ELÉTRICA"],
-["SK325","EMPILHADEIRA ELÉTRICA CONTRABALANÇADA"],
-["SK198","EMPILHADEIRA CONTRABALANÇADA GLP (COM GIRADOR DOCOL)"],
-["SK347","EMPILHADEIRA ELÉTRICA CONTRABALANÇADA"],
-["REB-009","REBOCADOR OPERADOR EM PÉ"],
-["REB-005","REBOCADOR OPERADOR EM PÉ"],
-["EMP-019","PALETEIRA ELÉTRICA"],
-["SK313","REBOCADOR OPERADOR EM PÉ"],
-["SK334","PALETEIRA ELÉTRICA"],
-["EMP-034","PALETEIRA ELÉTRICA"],
-["EMP-038","PALETEIRA ELÉTRICA"],
-["EMP-033","PALETEIRA ELÉTRICA"],
-["REB-004","REBOCADOR OPERADOR EM PÉ"],
-["SK335","PALETEIRA ELÉTRICA"],
-["EMP-031","PALETEIRA ELÉTRICA"],
-["REB-006","REBOCADOR OPERADOR EM PÉ"],
-["LIF-003","SELETORA"],
-["SK302","PALETEIRA ELÉTRICA"],
-["EMP-012","PALETEIRA ELÉTRICA"],
-["EMP-045","PALETEIRA ELÉTRICA"],
-["SK357","PALETEIRA ELÉTRICA"],
-["LIF-001","SELETORA"],
-["LIF-002","SELETORA"],
-["SK326","PALETEIRA ELÉTRICA"],
-["LIF-004","SELETORA"],
-["EMP-025","PALETEIRA ELÉTRICA"],
-["EMP-042","PALETEIRA ELÉTRICA"],
-["REB-010","REBOCADOR OPERADOR EM PÉ"],
-["EMP-013","PALETEIRA ELÉTRICA"],
-["EMP-027","PALETEIRA ELÉTRICA"],
-["SK349","EMPILHADEIRA RETRÁTIL"],
-["EMP-041","EMPILHADEIRA RETRÁTIL"],
-["SK333","PALETEIRA ELÉTRICA"],
-["SK361","EMPILHADEIRA RETRÁTIL"],
-["EMP-029","EMPILHADEIRA RETRÁTIL"],
-["SK321","PALETEIRA ELÉTRICA"],
-["SK427","EMPILHADEIRA ELÉTRICA CONTRABALANÇADA"],
-["SK338","PALETEIRA ELÉTRICA"],
-["SK348","EMPILHADEIRA RETRÁTIL"],
-["SK397","EMPILHADEIRA RETRÁTIL"],
-["EMP-030","EMPILHADEIRA RETRÁTIL"],
-["SK332","REBOCADOR OPERADOR SENTADO"],
-["SK306","REBOCADOR OPERADOR SENTADO"],
-["SK262","REBOCADOR OPERADOR SENTADO"],
-["SK340","REBOCADOR OPERADOR SENTADO"],
-["EMP-005","TRANSPALETEIRA"],
-["REB-011","REBOCADOR OPERADOR SENTADO"],
-["SK303","EMPILHADEIRA CONTRABALANÇADA GLP"],
-["EMP-2549","EMPILHADEIRA CONTRABALANÇADA GLP"],
-["EMP-3759","EMPILHADEIRA CONTRABALANÇADA GLP"],
-["SK336","EMPILHADEIRA RETRÁTIL"],
-["EMP-018","PALETEIRA ELÉTRICA"],
-["4312-EM1","EMPILHADEIRA RETRÁTIL"],
-["4312-EM2","EMPILHADEIRA RETRÁTIL"],
-["4312-EM3","EMPILHADEIRA RETRÁTIL"],
-["4312-EM4","PALETEIRA ELÉTRICA"],
-["4312-EM5","PALETEIRA ELÉTRICA"],
-["EMP-032","TRANSPALETEIRA OPERADOR EMBARCADO"],
-["SK417","PALETEIRA ELÉTRICA"],
-["SK344","REBOCADOR OPERADOR SENTADO"]
+["SK158","EMPILHADEIRA ELÉTRICA CONTRABALANÇADA (COM GIRADOR)","ALMOXARIFADO"],
+["SK168","EMPILHADEIRA ELÉTRICA CONTRABALANÇADA (COM GIRADOR)","ALMOXARIFADO"],
+["SK356","PALETEIRA ELÉTRICA","AMX"],
+["EMP-010","PALETEIRA ELÉTRICA","AMX"],
+["EMP-020","EMPILHADEIRA TRILATERAL","AMX"],
+["EMP-026","PALETEIRA ELÉTRICA","AMX"],
+["EMP-040","PALETEIRA ELÉTRICA","AMX"],
+["EMP-009","PALETEIRA ELÉTRICA","AMX"],
+["EMP-044","PALETEIRA ELÉTRICA","CD"],
+["SK325","EMPILHADEIRA ELÉTRICA CONTRABALANÇADA","AMX"],
+["SK198","EMPILHADEIRA CONTRABALANÇADA GLP (COM GIRADOR DOCOL)","CD"],
+["SK347","EMPILHADEIRA ELÉTRICA CONTRABALANÇADA","AMX"],
+["REB-009","REBOCADOR OPERADOR EM PÉ","AMX"],
+["REB-005","REBOCADOR OPERADOR EM PÉ","AMX"],
+["EMP-019","PALETEIRA ELÉTRICA","EPU"],
+["SK313","REBOCADOR OPERADOR EM PÉ","EPU INTERNO"],
+["SK334","PALETEIRA ELÉTRICA","EPU INTERNO"],
+["EMP-034","PALETEIRA ELÉTRICA","EPU TERCEIRO"],
+["EMP-038","PALETEIRA ELÉTRICA","ESC"],
+["EMP-033","PALETEIRA ELÉTRICA","ESC"],
+["REB-004","REBOCADOR OPERADOR EM PÉ","ESC"],
+["SK335","PALETEIRA ELÉTRICA","EPU TERCEIRO"],
+["EMP-031","PALETEIRA ELÉTRICA","FUNDIÇÃO"],
+["REB-006","REBOCADOR OPERADOR EM PÉ","ESC"],
+["LIF-003","SELETORA","ESC"],
+["SK302","PALETEIRA ELÉTRICA","ESC - Consolidação"],
+["EMP-012","PALETEIRA ELÉTRICA","ESC - Consolidação"],
+["EMP-045","PALETEIRA ELÉTRICA","ESTAMPARIA"],
+["SK357","PALETEIRA ELÉTRICA","ESC"],
+["LIF-001","SELETORA","FUNDIÇÃO"],
+["LIF-002","SELETORA","FUNDIÇÃO"],
+["SK326","PALETEIRA ELÉTRICA","ESC"],
+["LIF-004","SELETORA","FUNDIÇÃO"],
+["EMP-025","PALETEIRA ELÉTRICA","FUNDIÇÃO"],
+["EMP-042","PALETEIRA ELÉTRICA","FUNDIÇÃO"],
+["REB-010","REBOCADOR OPERADOR EM PÉ","FUNDIÇÃO"],
+["EMP-013","PALETEIRA ELÉTRICA","FUNDIÇÃO"],
+["EMP-027","PALETEIRA ELÉTRICA","FUNDIÇÃO"],
+["SK349","EMPILHADEIRA RETRÁTIL","FUNDIÇÃO"],
+["EMP-041","EMPILHADEIRA RETRÁTIL","GER"],
+["SK333","PALETEIRA ELÉTRICA","GER"],
+["SK361","EMPILHADEIRA RETRÁTIL","GER"],
+["EMP-029","EMPILHADEIRA RETRÁTIL","GER"],
+["SK321","PALETEIRA ELÉTRICA","GER"],
+["SK427","EMPILHADEIRA ELÉTRICA CONTRABALANÇADA","GER"],
+["SK338","PALETEIRA ELÉTRICA","GER"],
+["SK348","EMPILHADEIRA RETRÁTIL","GER"],
+["SK397","EMPILHADEIRA RETRÁTIL","GER"],
+["EMP-030","EMPILHADEIRA RETRÁTIL","GER - Estoque Químico"],
+["SK332","REBOCADOR OPERADOR SENTADO","GER - Rota"],
+["SK306","REBOCADOR OPERADOR SENTADO","GER - Rota"],
+["SK262","REBOCADOR OPERADOR SENTADO","GER - Rota"],
+["SK340","REBOCADOR OPERADOR SENTADO","INJETORAS"],
+["EMP-005","TRANSPALETEIRA","INOX"],
+["REB-011","REBOCADOR OPERADOR SENTADO","INOX"],
+["SK303","EMPILHADEIRA CONTRABALANÇADA GLP","INOX"],
+["EMP-2549","EMPILHADEIRA CONTRABALANÇADA GLP","INOX"],
+["EMP-3759","EMPILHADEIRA CONTRABALANÇADA GLP","INOX"],
+["SK336","EMPILHADEIRA RETRÁTIL","INOX"],
+["EMP-018","PALETEIRA ELÉTRICA","INJETORAS"],
+["4312-EM1","EMPILHADEIRA RETRÁTIL","INOX - SUCATA"],
+["4312-EM2","EMPILHADEIRA RETRÁTIL","INOX ESTOQUE CD"],
+["4312-EM3","EMPILHADEIRA RETRÁTIL","INOX ESTOQUE CD"],
+["4312-EM4","PALETEIRA ELÉTRICA","Lado Cavaco"],
+["4312-EM5","PALETEIRA ELÉTRICA","MANUTENÇÃO"],
+["EMP-032","TRANSPALETEIRA OPERADOR EMBARCADO","USINAGEM"],
+["SK417","PALETEIRA ELÉTRICA","USINAGEM"],
+["SK344","REBOCADOR OPERADOR SENTADO","USINAGEM"]
 ];
 
-let DB = loadDB();
+const CONFIG = {
+  // URL do Web App do Apps Script (Implantar > Gerenciar implantações)
+  API_URL: 'https://script.google.com/macros/s/AKfycbwjw5ahNdUXf2KCj4gzO4hwc3x7rGTrs5wggMP4NcrgIEEDurV_m0FjG7fGU-Zj9jXi/exec'
+};
+
+let DB = loadLocalDB();        // só operadores (login por PIN) ficam no navegador
+let remoteRegistros = [];      // vem da planilha — fonte da verdade de frota/histórico/ocorrências
+let resolvedOccurrenceIds = loadResolvedIds();
 let session = null; // {driverId, driverName}
 let pendingPin = "";
 let checklistState = null; // active checklist in progress
 
-function loadDB(){
-  const raw = localStorage.getItem('frota_db_docol_v2');
+function loadLocalDB(){
+  const raw = localStorage.getItem('frota_drivers_docol_v1');
   if(raw){ return JSON.parse(raw); }
   const seed = {
     drivers: [
       {id:'d1', name:'João Silva', pin:'1234'},
       {id:'d2', name:'Marcos Souza', pin:'2345'}
-    ],
-    carts: EQUIP_SEED.map((e,i)=>({id:'c'+i, label:e[0], type:e[1], status:'livre', currentDriverId:null, currentDriverName:null, lastLogTime:null})),
-    logs: [],
-    occurrences: []
+    ]
   };
-  localStorage.setItem('frota_db_docol_v2', JSON.stringify(seed));
+  localStorage.setItem('frota_drivers_docol_v1', JSON.stringify(seed));
   return seed;
 }
-function saveDB(){ localStorage.setItem('frota_db_docol_v2', JSON.stringify(DB)); }
+function saveDB(){ localStorage.setItem('frota_drivers_docol_v1', JSON.stringify(DB)); }
+
+function loadResolvedIds(){
+  const raw = localStorage.getItem('frota_ocorrencias_resolvidas_v1');
+  return raw ? new Set(JSON.parse(raw)) : new Set();
+}
+function saveResolvedIds(){
+  localStorage.setItem('frota_ocorrencias_resolvidas_v1', JSON.stringify([...resolvedOccurrenceIds]));
+}
 
 function fmtTime(iso){
   const d = new Date(iso);
   return d.toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 }
 function uid(){ return Math.random().toString(36).slice(2,10); }
+
+/* ---------------- BACKEND (planilha via Apps Script) ---------------- */
+async function apiListar(){
+  const res = await fetch(CONFIG.API_URL + '?acao=listar');
+  const data = await res.json();
+  if(!data.ok) throw new Error(data.erro || 'Falha ao carregar dados da planilha.');
+  return data.registros;
+}
+async function apiPost(payload){
+  // Sem header Content-Type explícito de propósito: evita preflight CORS e o
+  // Apps Script lê o corpo normalmente via e.postData.contents de qualquer forma.
+  const res = await fetch(CONFIG.API_URL, { method:'POST', body: JSON.stringify(payload) });
+  const data = await res.json();
+  if(!data.ok) throw new Error(data.erro || 'Falha ao salvar na planilha.');
+  return data;
+}
+async function syncFromBackend(){
+  remoteRegistros = await apiListar();
+}
+function parseDataBR(str){
+  if(!str) return null;
+  const [d,t] = String(str).split(' ');
+  if(!d || d.indexOf('/')===-1) return null;
+  const [dia,mes,ano] = d.split('/').map(Number);
+  const [h,min] = (t||'00:00').split(':').map(Number);
+  return new Date(ano, mes-1, dia, h||0, min||0);
+}
+
+/* ---------------- FROTA (derivada dos registros da planilha) ---------------- */
+function buildCarts(){
+  const ultimoPorEquip = {};
+  remoteRegistros.forEach(r=>{
+    const atual = ultimoPorEquip[r.equipamento];
+    if(!atual || (parseDataBR(r.dataRetirada) > parseDataBR(atual.dataRetirada))){
+      ultimoPorEquip[r.equipamento] = r;
+    }
+  });
+  return EQUIP_SEED.map(([label,type,setor])=>{
+    const r = ultimoPorEquip[label];
+    if(!r) return {id:label, label, type, setor, status:'livre', currentDriverName:null, lastLogTime:null};
+    if(!r.dataDevolucao){
+      return {id:label, label, type:r.tipo||type, setor:r.setor||setor, status:'uso', currentDriverName:r.usuarioRetirada, lastLogTime:r.dataRetirada};
+    }
+    const isAvariaRaw = (r.observacoesDevolucao||'').startsWith('[AVARIA]');
+    const avaria = isAvariaRaw && !resolvedOccurrenceIds.has('occ_'+r.idRegistro);
+    return {id:label, label, type:r.tipo||type, setor:r.setor||setor, status: avaria?'manutencao':'livre', currentDriverName:null, lastLogTime:r.dataDevolucao};
+  });
+}
+function buildSectorList(){
+  const sectors = [...new Set(EQUIP_SEED.map(e=>e[2]).filter(Boolean))];
+  sectors.sort((a,b)=> a.localeCompare(b,'pt-BR'));
+  return sectors;
+}
+function splitFotos(str){
+  return (str||'').split(',').map(s=>s.trim()).filter(Boolean);
+}
+function buildHistory(){
+  const entries = [];
+  remoteRegistros.forEach(r=>{
+    if(r.dataRetirada){
+      const avariaRet = (r.observacoesRetirada||'').startsWith('[AVARIA]');
+      entries.push({
+        type:'retirada', cartLabel:r.equipamento, driverName:r.usuarioRetirada,
+        timeLabel:r.dataRetirada, timeSort:parseDataBR(r.dataRetirada),
+        statusGood: !avariaRet,
+        problemDesc: avariaRet ? (r.observacoesRetirada||'').replace('[AVARIA] ','') : '',
+        photos: splitFotos(r.fotoRetirada)
+      });
+    }
+    if(r.dataDevolucao){
+      const avariaDev = (r.observacoesDevolucao||'').startsWith('[AVARIA]');
+      entries.push({
+        type:'entrega', cartLabel:r.equipamento, driverName:r.usuarioDevolucao,
+        timeLabel:r.dataDevolucao, timeSort:parseDataBR(r.dataDevolucao),
+        statusGood: !avariaDev,
+        problemDesc: avariaDev ? (r.observacoesDevolucao||'').replace('[AVARIA] ','') : '',
+        photos: splitFotos(r.fotoDevolucao)
+      });
+    }
+  });
+  entries.sort((a,b)=> (b.timeSort||0) - (a.timeSort||0));
+  return entries;
+}
+function buildOccurrences(){
+  return remoteRegistros
+    .filter(r=> (r.observacoesDevolucao||'').startsWith('[AVARIA]'))
+    .map(r=>({
+      id:'occ_'+r.idRegistro,
+      cartLabel:r.equipamento,
+      detectedTimeLabel:r.dataDevolucao,
+      description:(r.observacoesDevolucao||'').replace('[AVARIA] ',''),
+      assignedDriverName:r.usuarioDevolucao,
+      status: resolvedOccurrenceIds.has('occ_'+r.idRegistro) ? 'resolvida' : 'aberta'
+    }))
+    .sort((a,b)=> (parseDataBR(b.detectedTimeLabel)||0) - (parseDataBR(a.detectedTimeLabel)||0));
+}
 
 /* ---------------- LOGIN ---------------- */
 function renderDriverSelect(){
@@ -539,10 +669,16 @@ function logout(){
   document.getElementById('appShell').style.display = 'none';
   document.getElementById('loginView').style.display = 'flex';
 }
-function enterApp(){
+async function enterApp(){
   document.getElementById('loginView').style.display = 'none';
   document.getElementById('appShell').style.display = 'block';
   document.getElementById('currentUserLabel').textContent = session.driverName;
+  document.getElementById('fleetGrid').innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="big">◌</div>Carregando dados da planilha...</div>`;
+  try{
+    await syncFromBackend();
+  } catch(err){
+    alert('Não foi possível conectar à planilha agora. Verifique sua internet e tente novamente.\n\nDetalhe: ' + err.message);
+  }
   renderAll();
 }
 function openAdminSetup(){
@@ -577,21 +713,27 @@ function renderFleet(){
   const grid = document.getElementById('fleetGrid');
   const q = (document.getElementById('fleetSearch')?.value||'').trim().toLowerCase();
   const statusFilter = document.getElementById('fleetStatusFilter')?.value || 'all';
-  const list = DB.carts.filter(c=>{
+  const sectorSel = document.getElementById('fleetSectorFilter');
+  if(sectorSel && sectorSel.options.length<=1){
+    sectorSel.innerHTML = `<option value="all">Todos os setores</option>` + buildSectorList().map(s=>`<option value="${s}">${s}</option>`).join('');
+  }
+  const sectorFilter = sectorSel?.value || 'all';
+  const list = buildCarts().filter(c=>{
     const matchQ = !q || c.label.toLowerCase().includes(q) || (c.type||'').toLowerCase().includes(q);
     const matchS = statusFilter==='all' || c.status===statusFilter;
-    return matchQ && matchS;
+    const matchSector = sectorFilter==='all' || c.setor===sectorFilter;
+    return matchQ && matchS && matchSector;
   });
   if(list.length===0){
     grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="big">◌</div>Nenhum equipamento encontrado.</div>`;
     return;
   }
   grid.innerHTML = list.map(c=>{
-    const lastTime = c.lastLogTime ? fmtTime(c.lastLogTime) : '—';
+    const lastTime = c.lastLogTime || '—';
     return `
     <div class="cart-card status-${c.status}" onclick="openCartAction('${c.id}')">
       <div class="cart-id">${c.label}</div>
-      <div class="cart-type">${c.type||''}</div>
+      <div class="cart-type">${c.type||''}${c.setor?' · '+c.setor:''}</div>
       <div class="cart-status">${c.status==='livre'?'Disponível':c.status==='uso'?'Em uso':'Manutenção'}</div>
       <div class="cart-meta">
         ${c.status==='uso' ? `<b>${c.currentDriverName}</b><br>desde ${lastTime}` : `Último registro:<br>${lastTime}`}
@@ -602,8 +744,13 @@ function renderFleet(){
 
 /* ---------------- CART ACTION (retirada / entrega) ---------------- */
 function openCartAction(cartId){
-  const cart = DB.carts.find(c=>c.id===cartId);
-  if(cart.status === 'uso' && cart.currentDriverId !== session.driverId){
+  const cart = buildCarts().find(c=>c.id===cartId);
+  if(!cart) return;
+  if(cart.status === 'manutencao'){
+    alert('Este equipamento está em manutenção (avaria registrada na devolução). Ele precisa ser liberado na aba Ocorrências antes de voltar a ser retirado.');
+    return;
+  }
+  if(cart.status === 'uso' && cart.currentDriverName !== session.driverName){
     alert(`Este equipamento está em uso por ${cart.currentDriverName}. Ele precisa fazer a devolução (checklist de entrada) antes que outro operador possa retirá-lo. Cadeia de custódia bloqueada — isso impede que dois operadores usem o mesmo equipamento ao mesmo tempo.`);
     return;
   }
@@ -611,11 +758,13 @@ function openCartAction(cartId){
   startChecklist(cart, type);
 }
 
+const MAX_FOTOS = 10;
+
 function startChecklist(cart, type){
   checklistState = {
     cart, type,
     statusGood: null,
-    photo: null,
+    photos: [],
     problemDesc: '',
     motivoDevolucao: '',
     pegarOutro: null,
@@ -627,7 +776,7 @@ function startChecklist(cart, type){
 
 function checklistIsComplete(cs){
   if(cs.statusGood === null) return false;
-  if(cs.statusGood === true && !cs.photo) return false;
+  // Foto é sempre opcional — só exigimos a descrição do problema quando há avaria.
   if(cs.statusGood === false && !cs.problemDesc.trim()) return false;
   if(cs.type === 'entrega' && !cs.motivoDevolucao.trim()) return false;
   if(cs.type === 'entrega' && cs.pegarOutro === null) return false;
@@ -655,18 +804,29 @@ function renderChecklistModal(){
       </div>
     </div>
 
-    ${cs.statusGood===true ? `
+    ${cs.statusGood!==null ? `
       <div class="field-row">
-        <label>Foto do equipamento <span class="req">*</span></label>
-        <div class="photo-single ${cs.photo?'filled':''}" onclick="triggerPhoto()">
-          ${cs.photo ? `<img src="${cs.photo}"><div class="chk">✓</div>` : `<div class="icon">📷</div><div class="lbl">Toque para abrir a câmera e tirar a foto do equipamento</div>`}
+        <label>Fotos do equipamento <span style="color:var(--text-faint); text-transform:none; letter-spacing:0;">(opcional, até ${MAX_FOTOS})</span></label>
+        <div class="photo-gallery">
+          ${cs.photos.map((p,i)=>`
+            <div class="photo-thumb">
+              <img src="${p}">
+              <div class="rm" onclick="removePhoto(${i})">✕</div>
+            </div>
+          `).join('')}
+          ${cs.photos.length < MAX_FOTOS ? `
+            <div class="photo-add" onclick="triggerPhoto()">
+              <div class="icon">📷</div>
+              <div class="lbl">Toque para tirar foto</div>
+            </div>
+          ` : ''}
         </div>
         <input type="file" accept="image/*" capture="environment" id="fileInput" style="display:none" onchange="handlePhotoFile(event)">
       </div>
     ` : ''}
 
     ${cs.statusGood===false ? `
-      <div class="alert-box show">⚠ Item marcado como fora de boas condições. Não é necessário anexar foto, mas a descrição do problema abaixo é obrigatória e ficará registrada em seu nome e horário.</div>
+      <div class="alert-box show">⚠ Item marcado como fora de boas condições. A descrição do problema abaixo é obrigatória e ficará registrada em seu nome e horário. A foto continua opcional.</div>
       <div class="field-row">
         <label>Descreva o problema / avaria <span class="req">*</span></label>
         <textarea rows="3" placeholder="Descreva o dano ou problema encontrado no equipamento (ex: pneu furado, freio não funciona, garfo torto...)" oninput="checklistState.problemDesc=this.value; renderChecklistModal();">${cs.problemDesc}</textarea>
@@ -701,119 +861,126 @@ function renderChecklistModal(){
 function setStatusGood(val){
   checklistState.statusGood = val;
   if(val===true){ checklistState.problemDesc=''; }
-  if(val===false){ checklistState.photo=null; }
   renderChecklistModal();
 }
 function setPegarOutro(val){
   checklistState.pegarOutro = val;
   renderChecklistModal();
 }
-let activePhotoKey = null;
 function triggerPhoto(){
   document.getElementById('fileInput').click();
 }
 function handlePhotoFile(e){
   const file = e.target.files[0];
+  e.target.value = ''; // permite tirar outra foto em seguida sem recarregar o input
   if(!file) return;
+  if(checklistState.photos.length >= MAX_FOTOS) return;
   const reader = new FileReader();
   reader.onload = function(ev){
-    checklistState.photo = ev.target.result;
+    checklistState.photos.push(ev.target.result);
     renderChecklistModal();
   };
   reader.readAsDataURL(file);
+}
+function removePhoto(index){
+  checklistState.photos.splice(index,1);
+  renderChecklistModal();
 }
 function cancelChecklist(){
   checklistState = null;
   document.getElementById('checklistModal').classList.remove('show');
 }
-function submitChecklist(){
+async function submitChecklist(){
   const cs = checklistState;
-  const now = new Date().toISOString();
-  const log = {
-    id: uid(),
-    cartId: cs.cart.id,
-    driverId: session.driverId,
-    driverName: session.driverName,
-    type: cs.type,
-    time: now,
-    statusGood: cs.statusGood,
-    photo: cs.photo,
-    problemDesc: cs.problemDesc,
-    motivoDevolucao: cs.motivoDevolucao,
-    pegarOutro: cs.pegarOutro,
-    notes: cs.notes
-  };
-  DB.logs.unshift(log);
+  const btn = document.querySelector('#checklistModalBody .btn-primary');
+  const originalLabel = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.textContent = 'Salvando na planilha...'; }
 
-  const cart = DB.carts.find(c=>c.id===cs.cart.id);
-  if(cs.type === 'retirada'){
-    cart.status = 'uso';
-    cart.currentDriverId = session.driverId;
-    cart.currentDriverName = session.driverName;
-    cart.lastLogTime = now;
-  } else {
-    cart.status = cs.statusGood===false ? 'manutencao' : 'livre';
-    cart.currentDriverId = null;
-    cart.currentDriverName = null;
-    cart.lastLogTime = now;
-    if(cs.statusGood===false){
-      DB.occurrences.unshift({
-        id: uid(),
-        cartId: cart.id,
-        detectedTime: now,
-        description: `Avaria detectada na devolução: ${cs.problemDesc}. Motivo da devolução: ${cs.motivoDevolucao||'—'}. Obs: ${cs.notes||'—'}`,
-        assignedDriverId: session.driverId,
-        assignedDriverName: session.driverName,
-        status: 'aberta',
-        linkedLogId: log.id
+  try{
+    // Todas as fotos da galeria vão pro Drive agora (não só a primeira).
+    const fotos = cs.photos.map((p,i)=>({
+      base64: p,
+      nome: cs.cart.label + '_' + cs.type + '_' + (i+1) + '_' + Date.now() + '.jpg',
+      mime: 'image/jpeg'
+    }));
+
+    if(cs.type === 'retirada'){
+      const obsRetirada = [
+        cs.statusGood===false ? ('[AVARIA] ' + cs.problemDesc) : '',
+        cs.notes || ''
+      ].filter(Boolean).join(' | ');
+      await apiPost({
+        acao: 'retirar',
+        equipamento: cs.cart.label,
+        tipo: cs.cart.type,
+        setor: cs.cart.setor || '',
+        usuario: session.driverName,
+        checklist: cs.statusGood===false ? 'AVARIA' : 'OK',
+        observacoes: obsRetirada,
+        fotos: fotos
+      });
+    } else {
+      const parts = [];
+      if(cs.statusGood===false) parts.push('[AVARIA] ' + cs.problemDesc);
+      if(cs.motivoDevolucao) parts.push('Motivo: ' + cs.motivoDevolucao);
+      if(cs.notes) parts.push('Obs: ' + cs.notes);
+      await apiPost({
+        acao: 'devolver',
+        equipamento: cs.cart.label,
+        usuario: session.driverName,
+        observacoes: parts.join(' | '),
+        fotos: fotos
       });
     }
-  }
-  saveDB();
-  const wantsAnother = cs.type==='entrega' && cs.pegarOutro===true;
-  checklistState = null;
-  document.getElementById('checklistModal').classList.remove('show');
-  renderAll();
-  if(wantsAnother){
-    switchTab('fleetView');
-    document.querySelectorAll('.tab').forEach(t=> t.classList.toggle('active', t.dataset.view==='fleetView'));
-    setTimeout(()=>{ alert('Equipamento devolvido com sucesso. Selecione agora o próximo equipamento que deseja retirar.'); }, 50);
+
+    await syncFromBackend();
+    const wantsAnother = cs.type==='entrega' && cs.pegarOutro===true;
+    checklistState = null;
+    document.getElementById('checklistModal').classList.remove('show');
+    renderAll();
+    if(wantsAnother){
+      switchTab('fleetView');
+      document.querySelectorAll('.tab').forEach(t=> t.classList.toggle('active', t.dataset.view==='fleetView'));
+      setTimeout(()=>{ alert('Equipamento devolvido com sucesso. Selecione agora o próximo equipamento que deseja retirar.'); }, 50);
+    }
+  } catch(err){
+    alert('Não foi possível salvar na planilha. Verifique sua internet e tente novamente.\n\nDetalhe: ' + err.message);
+    if(btn){ btn.disabled = false; btn.textContent = originalLabel; }
   }
 }
 
 /* ---------------- HISTORY ---------------- */
 function renderHistoryFilter(){
   const sel = document.getElementById('historyFilter');
-  sel.innerHTML = `<option value="all">Todos os equipamentos</option>` + DB.carts.map(c=>`<option value="${c.id}">${c.label} — ${c.type||''}</option>`).join('');
+  const prev = sel.value;
+  sel.innerHTML = `<option value="all">Todos os equipamentos</option>` + buildCarts().map(c=>`<option value="${c.label}">${c.label} — ${c.type||''}</option>`).join('');
+  if(prev) sel.value = prev;
   sel.onchange = renderHistory;
 }
 function renderHistory(){
   const filter = document.getElementById('historyFilter')?.value || 'all';
-  const logs = DB.logs.filter(l=> filter==='all' || l.cartId===filter);
+  const entries = buildHistory().filter(l=> filter==='all' || l.cartLabel===filter);
   const list = document.getElementById('historyList');
-  if(logs.length===0){
+  if(entries.length===0){
     list.innerHTML = `<div class="empty-state"><div class="big">◌</div>Nenhum registro ainda.</div>`;
     return;
   }
-  list.innerHTML = logs.map(l=>{
-    const cart = DB.carts.find(c=>c.id===l.cartId);
-    const photoThumb = l.photo ? `<img src="${l.photo}" onclick="showPhoto('${l.photo.replace(/'/g,"\\'")}')">` : '';
+  list.innerHTML = entries.map(l=>{
+    const photoThumbs = l.photos.map(p=>`<img src="${p}" onclick="showPhoto('${p.replace(/'/g,"\\'")}')">`).join('');
     return `
     <div class="timeline-entry">
       <div class="te-dot ${l.type==='retirada'?'retirada':'entrega'}"></div>
       <div class="te-body">
         <div class="te-top">
-          <span class="te-title">${l.type==='retirada'?'Retirada':'Devolução'} — ${cart?cart.label:'?'}</span>
-          <span class="te-time">${fmtTime(l.time)}</span>
+          <span class="te-title">${l.type==='retirada'?'Retirada':'Devolução'} — ${l.cartLabel}</span>
+          <span class="te-time">${l.timeLabel}</span>
         </div>
         <div class="te-detail">
-          Responsável: <b>${l.driverName}</b>
+          Responsável: <b>${l.driverName||'—'}</b>
           ${l.statusGood===false ? ` &nbsp; <span class="badge-danger">Equipamento com avaria</span>` : ` &nbsp; <span class="badge-ok">Bom estado</span>`}
           ${l.problemDesc ? `<br>Problema descrito: ${l.problemDesc}` : ''}
-          ${l.motivoDevolucao ? `<br>Motivo da devolução: ${l.motivoDevolucao}` : ''}
-          ${l.notes ? `<br>Obs: ${l.notes}` : ''}
         </div>
-        <div class="te-photos">${photoThumb}</div>
+        <div class="te-photos">${photoThumbs}</div>
       </div>
     </div>`;
   }).join('');
@@ -829,22 +996,21 @@ function closePhotoModal(){
 /* ---------------- OCCURRENCES ---------------- */
 function renderOccurrences(){
   const list = document.getElementById('occurrenceList');
-  if(DB.occurrences.length===0){
+  const occurrences = buildOccurrences();
+  if(occurrences.length===0){
     list.innerHTML = `<div class="empty-state"><div class="big">✓</div>Nenhuma ocorrência registrada.</div>`;
     return;
   }
-  list.innerHTML = DB.occurrences.map(o=>{
-    const cart = DB.carts.find(c=>c.id===o.cartId);
-    return `
+  list.innerHTML = occurrences.map(o=>`
     <div class="timeline-entry">
       <div class="te-dot ocorrencia"></div>
       <div class="te-body">
         <div class="te-top">
-          <span class="te-title">${cart?cart.label:'?'} — Ocorrência</span>
-          <span class="te-time">${fmtTime(o.detectedTime)}</span>
+          <span class="te-title">${o.cartLabel} — Ocorrência</span>
+          <span class="te-time">${o.detectedTimeLabel||'—'}</span>
         </div>
         <div class="te-detail">
-          Responsável identificado pela cadeia de custódia: <b>${o.assignedDriverName}</b><br>
+          Responsável identificado pela cadeia de custódia: <b>${o.assignedDriverName||'—'}</b><br>
           ${o.description}
         </div>
         <div style="margin-top:8px;">
@@ -852,15 +1018,13 @@ function renderOccurrences(){
           ${o.status==='aberta' ? `<button class="btn btn-sm" style="margin-top:8px;" onclick="resolveOccurrence('${o.id}')">Marcar como resolvida</button>` : ''}
         </div>
       </div>
-    </div>`;
-  }).join('');
+    </div>`).join('');
 }
 function resolveOccurrence(id){
-  const o = DB.occurrences.find(x=>x.id===id);
-  o.status = 'resolvida';
-  const cart = DB.carts.find(c=>c.id===o.cartId);
-  if(cart.status==='manutencao') cart.status='livre';
-  saveDB();
+  // Observação: a resolução fica registrada neste navegador (a planilha não tem
+  // uma coluna de status de ocorrência). O equipamento volta a ficar "Disponível" aqui.
+  resolvedOccurrenceIds.add(id);
+  saveResolvedIds();
   renderAll();
 }
 
@@ -880,11 +1044,12 @@ function addCart(){
   const label = document.getElementById('newCartId').value.trim();
   const typeVal = document.getElementById('newCartType').value.trim();
   if(!label){ alert('Informe a identificação do equipamento.'); return; }
-  DB.carts.push({id:uid(), label, type:typeVal, status:'livre', currentDriverId:null, currentDriverName:null, lastLogTime:null});
-  saveDB();
+  if(EQUIP_SEED.some(e=>e[0]===label)){ alert('Já existe um equipamento com essa identificação.'); return; }
+  EQUIP_SEED.push([label, typeVal]);
   document.getElementById('newCartId').value='';
   document.getElementById('newCartType').value='';
   renderAll();
+  alert('Equipamento adicionado nesta sessão/navegador. Ele só aparecerá para os demais operadores depois que a lista EQUIP_SEED do código for atualizada e republicada.');
 }
 function renderAdmin(){
   const el = document.getElementById('driverListAdmin');
@@ -896,7 +1061,8 @@ function renderAdmin(){
   `).join('');
 }
 function exportData(){
-  const blob = new Blob([JSON.stringify(DB, null, 2)], {type:'application/json'});
+  const payload = { drivers: DB.drivers, registros: remoteRegistros };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
