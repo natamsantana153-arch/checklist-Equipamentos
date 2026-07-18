@@ -268,6 +268,63 @@ select:focus, input:focus, textarea:focus{ outline:none; border-color:var(--blue
   border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px; margin-bottom:16px;
   font-size:12.5px; color:var(--text-dim);
 }
+/* ============ EM USO POR VOCÊ ============ */
+.myuse-box{
+  border:1px solid var(--amber); border-radius:var(--radius); padding:16px; margin-bottom:18px;
+  background: linear-gradient(180deg, rgba(245,166,35,0.10), rgba(245,166,35,0.02));
+}
+.myuse-box .eyebrow{ color:var(--amber); }
+.myuse-box h2{ font-size:15px; margin-bottom:2px; }
+.myuse-box .sub{ font-size:12px; color:var(--text-dim); margin-bottom:12px; }
+.myuse-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:10px; }
+.myuse-card{
+  background:var(--bg-panel-raised); border:1px solid var(--amber); border-radius:var(--radius);
+  padding:14px; cursor:pointer;
+}
+.myuse-card:hover{ background:#20242a; }
+.myuse-card .cart-id{ color:var(--amber); }
+.myuse-card .btn{ margin-top:10px; }
+
+/* ============ TIPO DE MOVIMENTO (retirada x devolução) ============ */
+.move-banner{ display:flex; gap:10px; margin:4px 0 16px; }
+.move-opt{
+  flex:1; border:1.5px solid var(--line); border-radius:var(--radius); padding:12px 8px;
+  text-align:center; background:var(--bg-panel-raised); color:var(--text-faint);
+}
+.move-opt .mo-title{ font-family:var(--mono); font-size:12.5px; text-transform:uppercase; letter-spacing:0.8px; font-weight:700; }
+.move-opt .mo-sub{ font-size:10.5px; margin-top:3px; }
+.move-opt.on.retirada{ border-color:var(--amber); background:var(--amber-dim); color:var(--amber); }
+.move-opt.on.entrega{ border-color:var(--teal); background:var(--teal-dim); color:var(--teal); }
+.move-opt.off{ opacity:0.3; }
+.move-opt.off .mo-title{ text-decoration:line-through; }
+
+/* ============ EXPORTAÇÃO ============ */
+.te-actions{ margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
+.export-list{ display:flex; flex-direction:column; gap:8px; margin-top:14px; }
+.export-list .btn{ justify-content:flex-start; }
+.export-hint{ font-size:11.5px; color:var(--text-faint); margin-top:12px; line-height:1.5; }
+.photo-modal-actions{ display:flex; gap:8px; margin-top:12px; }
+.photo-modal-actions a{
+  flex:1; text-align:center; text-decoration:none; padding:9px 12px; border-radius:var(--radius);
+  border:1px solid var(--line); color:var(--text-dim); font-size:12px; font-family:var(--mono);
+}
+.photo-block{ margin-top:10px; }
+.photo-block-title{
+  font-family:var(--mono); font-size:10px; letter-spacing:0.8px; text-transform:uppercase;
+  color:var(--text-faint); margin-bottom:6px;
+}
+.photo-block-title span{ color:var(--blue2); }
+.te-photos img{ width:72px; height:72px; }
+.photo-missing{
+  font-size:11.5px; color:var(--amber); background:var(--amber-dim); border:1px solid var(--amber);
+  border-radius:var(--radius); padding:8px 10px; line-height:1.45;
+}
+.photo-none{ font-size:11.5px; color:var(--text-faint); }
+.photo-broken{
+  display:flex; align-items:center; justify-content:center; text-align:center;
+  font-size:9px; font-family:var(--mono); color:var(--text-faint);
+  background:var(--bg-panel-raised); border:1px dashed var(--line); border-radius:4px;
+}
 @media(max-width:480px){
   .fleet-grid{ grid-template-columns:1fr 1fr; }
 }
@@ -324,6 +381,7 @@ select:focus, input:focus, textarea:focus{ outline:none; border-color:var(--blue
   <div class="view active" id="fleetView">
     <div class="section-title"><h1>Equipamentos</h1></div>
     <p class="sub" style="margin-bottom:14px;">Toque em um equipamento para retirar (checklist de saída) ou devolver (checklist de entrada).</p>
+    <div id="myUseBox"></div>
     <div class="filter-row">
       <input type="text" id="fleetSearch" placeholder="Buscar por código ou tipo..." oninput="renderFleet()">
       <select id="fleetSectorFilter" onchange="renderFleet()">
@@ -388,8 +446,19 @@ select:focus, input:focus, textarea:focus{ outline:none; border-color:var(--blue
       <div id="driverListAdmin"></div>
     </div>
     <div class="card">
+      <h2>Diagnóstico de fotos</h2>
+      <p class="sub">Testa a conexão com o Apps Script, mostra o que está gravado nas colunas I e M da planilha e tenta baixar a última foto. Use isto quando a foto não aparecer.</p>
+      <button class="btn" onclick="rodarDiagnostico()">🔎 Rodar diagnóstico</button>
+      <pre id="diagOut" style="display:none; white-space:pre-wrap; word-break:break-all; font-family:var(--mono); font-size:11px; color:var(--text-dim); background:var(--bg-panel-raised); border:1px solid var(--line); border-radius:var(--radius); padding:12px; margin-top:12px; line-height:1.6;"></pre>
+    </div>
+    <div class="card">
+      <h2>Gerar HTML com as fotos embutidas</h2>
+      <p class="sub">Gera uma cópia deste app com todas as fotos gravadas <b>dentro do próprio arquivo HTML</b> (base64). O arquivo gerado abre em qualquer computador, sem internet e sem Google Drive, já mostrando as fotos no Histórico e nas Ocorrências. Use este arquivo para arquivar ou enviar para a supervisão/auditoria.</p>
+      <button class="btn btn-primary" onclick="gerarHtmlComFotos()">🖼️ Gerar HTML com fotos</button>
+    </div>
+    <div class="card">
       <h2>Exportar dados</h2>
-      <p class="sub">Baixe todo o histórico de checklists e ocorrências em JSON para auditoria externa.</p>
+      <p class="sub">Baixe o histórico de checklists e ocorrências em JSON para auditoria externa. Inclui as fotos guardadas neste aparelho (em base64) e os links do Drive de todos os registros.</p>
       <button class="btn" onclick="exportData()">Exportar JSON</button>
     </div>
   </div>
@@ -402,7 +471,28 @@ select:focus, input:focus, textarea:focus{ outline:none; border-color:var(--blue
 
 <!-- PHOTO VIEW MODAL -->
 <div class="modal-overlay" id="photoModal" onclick="closePhotoModal()">
-  <div class="modal-box"><img id="photoModalImg" src=""></div>
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <span class="eyebrow">Foto do registro</span>
+    <div id="photoModalCaption" style="font-size:12.5px; color:var(--text-dim); margin-bottom:10px;"></div>
+    <img id="photoModalImg" src="" alt="Foto do equipamento" style="width:100%; display:block; background:var(--bg-panel-raised); min-height:120px;">
+    <div id="photoModalError" style="display:none; font-size:12px; color:var(--amber); margin-top:10px;">
+      Não foi possível carregar esta foto.
+    </div>
+    <div id="photoModalNav" style="display:none; align-items:center; justify-content:space-between; gap:10px; margin-top:10px;">
+      <button class="btn btn-sm" onclick="movePhotoViewer(-1)">‹ Anterior</button>
+      <span id="photoModalCount" class="te-tag"></span>
+      <button class="btn btn-sm" onclick="movePhotoViewer(1)">Próxima ›</button>
+    </div>
+    <div class="photo-modal-actions">
+      <a id="photoModalOpen" href="#" target="_blank" rel="noopener" style="display:none;">Abrir no Drive</a>
+      <a href="#" onclick="closePhotoModal(); return false;">Fechar</a>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="exportModal" onclick="closeExportModal()">
+  <div class="modal-box" onclick="event.stopPropagation()" id="exportModalBody"></div>
 </div>
 
 <script>
@@ -525,6 +615,172 @@ function fmtTime(iso){
   return d.toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 }
 function uid(){ return Math.random().toString(36).slice(2,10); }
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------------- SENHA ADMINISTRATIVA ----------------
+   Atenção: esta senha fica no código do app (front-end). Ela serve para evitar
+   que um operador comum abra o cadastro/admin por engano — NÃO é segurança real.
+   Quem abrir o código-fonte da página consegue lê-la.
+------------------------------------------------------- */
+const ADMIN_PASSWORD = 'chinelo123';
+let adminUnlocked = false;
+function requireAdminPassword(){
+  if(adminUnlocked) return true;
+  const tentativa = prompt('Área restrita. Digite a senha administrativa:');
+  if(tentativa === null) return false;
+  if(tentativa.trim() === ADMIN_PASSWORD){
+    adminUnlocked = true;
+    return true;
+  }
+  alert('Senha incorreta. Acesso negado.');
+  return false;
+}
+
+/* ============================================================
+   FOTOS EMBUTIDAS NESTE ARQUIVO HTML
+   O bloco abaixo é reescrito quando você usa
+   Admin > "Gerar HTML com as fotos embutidas".
+   As fotos ficam gravadas AQUI DENTRO, em base64, dentro do próprio arquivo.
+   Esse arquivo gerado abre em qualquer computador, sem internet e sem Drive,
+   já mostrando as fotos no Histórico e nas Ocorrências.
+============================================================ */
+/* __FOTOS_EMBUTIDAS_INICIO__ */
+const FOTOS_EMBUTIDAS = {};
+/* __FOTOS_EMBUTIDAS_FIM__ */
+
+/* ---------------- FOTOS: DRIVE + CÓPIA LOCAL ----------------
+   Cada foto é salva nos DOIS lugares:
+
+   1) Google Drive, na pasta "Fotos equipamento" (feito pelo Apps Script).
+      O link vai para a planilha: coluna I (retirada) e coluna M (devolução).
+      É isso que faz a foto aparecer para QUALQUER operador/supervisor,
+      em qualquer aparelho.
+
+   2) Cópia local neste aparelho (IndexedDB), em base64. Serve para:
+      - mostrar a foto instantaneamente, sem depender do Drive;
+      - garantir que a foto vá embutida no PDF/Word exportado;
+      - Admin > "Gerar HTML com fotos" embutir as imagens no arquivo.
+
+   Ao exibir, o app usa a cópia local quando existe; se não existe (registro
+   feito em outro aparelho), usa o link do Drive da planilha.
+------------------------------------------------------------ */
+const PHOTO_DB_NAME  = 'frota_fotos_docol_v1';
+const PHOTO_STORE    = 'fotos';
+const MAX_LADO_FOTO  = 1280;   // redimensiona antes de guardar (economiza espaço)
+const QUALIDADE_FOTO = 0.7;
+
+let photoStore = {};           // { 'ret_<idRegistro>': [dataUrl, ...], 'dev_<id>': [...] }
+let photoDB = null;
+
+function openPhotoDB(){
+  return new Promise((resolve, reject)=>{
+    if(photoDB) return resolve(photoDB);
+    if(!window.indexedDB) return reject(new Error('Este navegador não suporta armazenamento local de fotos.'));
+    const req = indexedDB.open(PHOTO_DB_NAME, 1);
+    req.onupgradeneeded = ()=>{
+      const db = req.result;
+      if(!db.objectStoreNames.contains(PHOTO_STORE)) db.createObjectStore(PHOTO_STORE);
+    };
+    req.onsuccess = ()=>{ photoDB = req.result; resolve(photoDB); };
+    req.onerror = ()=> reject(req.error || new Error('Falha ao abrir o banco de fotos.'));
+  });
+}
+// Carrega as fotos: primeiro as que estão embutidas neste arquivo HTML,
+// depois as guardadas neste aparelho (que complementam/atualizam).
+async function loadPhotoIndex(){
+  photoStore = Object.assign({}, FOTOS_EMBUTIDAS);
+  try{
+    const db = await openPhotoDB();
+    const locais = await new Promise((resolve, reject)=>{
+      const tx = db.transaction(PHOTO_STORE, 'readonly');
+      const st = tx.objectStore(PHOTO_STORE);
+      const out = {};
+      const req = st.openCursor();
+      req.onsuccess = ()=>{
+        const cur = req.result;
+        if(cur){ out[cur.key] = cur.value || []; cur.continue(); }
+        else resolve(out);
+      };
+      req.onerror = ()=> reject(req.error);
+    });
+    Object.assign(photoStore, locais);
+  } catch(err){
+    console.warn('Fotos locais indisponíveis:', err);
+  }
+}
+async function savePhotosLocal(key, fotos){
+  photoStore[key] = fotos;
+  const db = await openPhotoDB();
+  return new Promise((resolve, reject)=>{
+    const tx = db.transaction(PHOTO_STORE, 'readwrite');
+    tx.objectStore(PHOTO_STORE).put(fotos, key);
+    tx.oncomplete = resolve;
+    tx.onerror = ()=> reject(tx.error);
+  });
+}
+// Redimensiona/comprime a foto antes de guardar (senão o armazenamento estoura rápido).
+function comprimirFoto(dataUrl){
+  return new Promise(resolve=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const escala = Math.min(1, MAX_LADO_FOTO / Math.max(img.width, img.height));
+      const cv = document.createElement('canvas');
+      cv.width  = Math.round(img.width * escala);
+      cv.height = Math.round(img.height * escala);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      try{ resolve(cv.toDataURL('image/jpeg', QUALIDADE_FOTO)); }
+      catch(e){ resolve(dataUrl); }
+    };
+    img.onerror = ()=> resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+/* Links antigos do Drive (registros anteriores a esta versão) continuam abrindo. */
+function driveIdFromUrl(u){
+  const s = String(u||'');
+  if(!s || s.startsWith('data:')) return null;
+  const m = s.match(/[-\w]{25,}/);
+  return m ? m[0] : null;
+}
+function photoThumbUrl(u, size){
+  const id = driveIdFromUrl(u);
+  return id ? ('https://drive.google.com/thumbnail?id=' + id + '&sz=w' + (size||400)) : u;
+}
+function photoOpenUrl(u){
+  const id = driveIdFromUrl(u);
+  return id ? ('https://drive.google.com/file/d/' + id + '/view') : u;
+}
+/* Chave da foto no armazenamento local.
+   NÃO depende da coluna A (ID) da planilha — ela pode estar vazia.
+   Usa equipamento + data/hora do movimento, que sempre existem.
+   prefixo: 'ret' (retirada) ou 'dev' (devolução). */
+function chaveRegistro(prefixo, reg){
+  const data = prefixo === 'ret' ? reg.dataRetirada : reg.dataDevolucao;
+  const base = String(reg.equipamento||'') + '_' + String(data||'');
+  return prefixo + '_' + base.replace(/[^0-9A-Za-z]/g, '');
+}
+
+// Fotos de um registro: usa a cópia local deste aparelho quando existe
+// (instantânea e vai embutida na exportação); senão usa os links do Drive
+// que estão na planilha (colunas I e M) — foto tirada em outro aparelho.
+function photosFor(prefixo, reg, celulaPlanilha){
+  const locais = photoStore[chaveRegistro(prefixo, reg)]
+    || photoStore[prefixo + '_' + reg.idRegistro]   // chave antiga (versões anteriores)
+    || [];
+  if(locais.length) return locais;
+  return splitFotos(celulaPlanilha).filter(u=> /^https?:/i.test(u));
+}
+// Quantas fotos o registro deveria ter, segundo a planilha (links do Drive ou
+// o texto "N foto(s)" de registros da versão offline).
+function fotosEsperadas(celulaPlanilha){
+  const links = splitFotos(celulaPlanilha).filter(u=> /^https?:/i.test(u));
+  if(links.length) return links.length;
+  const m = String(celulaPlanilha||'').match(/(\d+)\s*foto/i);
+  return m ? Number(m[1]) : 0;
+}
 
 /* ---------------- BACKEND (planilha via Apps Script) ---------------- */
 async function apiListar(){
@@ -581,45 +837,83 @@ function buildSectorList(){
 function splitFotos(str){
   return (str||'').split(',').map(s=>s.trim()).filter(Boolean);
 }
+function limparObs(txt){
+  return (txt||'').replace('[AVARIA] ','').trim();
+}
 function buildHistory(){
   const entries = [];
   remoteRegistros.forEach(r=>{
     if(r.dataRetirada){
       const avariaRet = (r.observacoesRetirada||'').startsWith('[AVARIA]');
       entries.push({
-        type:'retirada', cartLabel:r.equipamento, driverName:r.usuarioRetirada,
+        id:'ret_'+r.idRegistro,
+        type:'retirada', cartLabel:r.equipamento, cartType:r.tipo||'', setor:r.setor||'',
+        driverName:r.usuarioRetirada,
         timeLabel:r.dataRetirada, timeSort:parseDataBR(r.dataRetirada),
         statusGood: !avariaRet,
-        problemDesc: avariaRet ? (r.observacoesRetirada||'').replace('[AVARIA] ','') : '',
-        photos: splitFotos(r.fotoRetirada)
+        problemDesc: avariaRet ? limparObs(r.observacoesRetirada) : '',
+        obsFull: r.observacoesRetirada||'',
+        checklist: r.checklist||'',
+        idRegistro: r.idRegistro,
+        photos: photosFor('ret', r, r.fotoRetirada),
+        fotosEsperadas: fotosEsperadas(r.fotoRetirada)
       });
     }
     if(r.dataDevolucao){
       const avariaDev = (r.observacoesDevolucao||'').startsWith('[AVARIA]');
       entries.push({
-        type:'entrega', cartLabel:r.equipamento, driverName:r.usuarioDevolucao,
+        id:'dev_'+r.idRegistro,
+        type:'entrega', cartLabel:r.equipamento, cartType:r.tipo||'', setor:r.setor||'',
+        driverName:r.usuarioDevolucao,
         timeLabel:r.dataDevolucao, timeSort:parseDataBR(r.dataDevolucao),
         statusGood: !avariaDev,
-        problemDesc: avariaDev ? (r.observacoesDevolucao||'').replace('[AVARIA] ','') : '',
-        photos: splitFotos(r.fotoDevolucao)
+        problemDesc: avariaDev ? limparObs(r.observacoesDevolucao) : '',
+        obsFull: r.observacoesDevolucao||'',
+        checklist: '',
+        idRegistro: r.idRegistro,
+        photos: photosFor('dev', r, r.fotoDevolucao),
+        fotosEsperadas: fotosEsperadas(r.fotoDevolucao)
       });
     }
   });
   entries.sort((a,b)=> (b.timeSort||0) - (a.timeSort||0));
   return entries;
 }
+
+/* Toda avaria vira ocorrência — tanto a detectada na RETIRADA quanto na DEVOLUÇÃO. */
 function buildOccurrences(){
-  return remoteRegistros
-    .filter(r=> (r.observacoesDevolucao||'').startsWith('[AVARIA]'))
-    .map(r=>({
-      id:'occ_'+r.idRegistro,
-      cartLabel:r.equipamento,
-      detectedTimeLabel:r.dataDevolucao,
-      description:(r.observacoesDevolucao||'').replace('[AVARIA] ',''),
-      assignedDriverName:r.usuarioDevolucao,
-      status: resolvedOccurrenceIds.has('occ_'+r.idRegistro) ? 'resolvida' : 'aberta'
-    }))
-    .sort((a,b)=> (parseDataBR(b.detectedTimeLabel)||0) - (parseDataBR(a.detectedTimeLabel)||0));
+  const occ = [];
+  remoteRegistros.forEach(r=>{
+    if((r.observacoesRetirada||'').startsWith('[AVARIA]')){
+      const id = 'occr_'+r.idRegistro;
+      occ.push({
+        id, origem:'retirada', cartLabel:r.equipamento, cartType:r.tipo||'', setor:r.setor||'',
+        detectedTimeLabel:r.dataRetirada,
+        description: limparObs(r.observacoesRetirada),
+        assignedDriverName:r.usuarioRetirada,
+        photos: photosFor('ret', r, r.fotoRetirada),
+        fotosEsperadas: fotosEsperadas(r.fotoRetirada),
+        photosOutro: photosFor('dev', r, r.fotoDevolucao),
+        fotosEsperadasOutro: fotosEsperadas(r.fotoDevolucao),
+        status: resolvedOccurrenceIds.has(id) ? 'resolvida' : 'aberta'
+      });
+    }
+    if((r.observacoesDevolucao||'').startsWith('[AVARIA]')){
+      const id = 'occ_'+r.idRegistro; // mantém o ID antigo (ocorrências já resolvidas continuam válidas)
+      occ.push({
+        id, origem:'devolucao', cartLabel:r.equipamento, cartType:r.tipo||'', setor:r.setor||'',
+        detectedTimeLabel:r.dataDevolucao,
+        description: limparObs(r.observacoesDevolucao),
+        assignedDriverName:r.usuarioDevolucao,
+        photos: photosFor('dev', r, r.fotoDevolucao),
+        fotosEsperadas: fotosEsperadas(r.fotoDevolucao),
+        photosOutro: photosFor('ret', r, r.fotoRetirada),
+        fotosEsperadasOutro: fotosEsperadas(r.fotoRetirada),
+        status: resolvedOccurrenceIds.has(id) ? 'resolvida' : 'aberta'
+      });
+    }
+  });
+  return occ.sort((a,b)=> (parseDataBR(b.detectedTimeLabel)||0) - (parseDataBR(a.detectedTimeLabel)||0));
 }
 
 /* ---------------- LOGIN ---------------- */
@@ -666,6 +960,7 @@ function attemptLogin(){
 }
 function logout(){
   session = null;
+  adminUnlocked = false; // ao sair, a área admin volta a pedir senha
   document.getElementById('appShell').style.display = 'none';
   document.getElementById('loginView').style.display = 'flex';
 }
@@ -674,6 +969,7 @@ async function enterApp(){
   document.getElementById('appShell').style.display = 'block';
   document.getElementById('currentUserLabel').textContent = session.driverName;
   document.getElementById('fleetGrid').innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="big">◌</div>Carregando dados da planilha...</div>`;
+  await loadPhotoIndex();
   try{
     await syncFromBackend();
   } catch(err){
@@ -682,6 +978,7 @@ async function enterApp(){
   renderAll();
 }
 function openAdminSetup(){
+  if(!requireAdminPassword()) return;
   switchTab('adminView', true);
 }
 
@@ -690,6 +987,12 @@ document.querySelectorAll('.tab').forEach(t=>{
   t.addEventListener('click', ()=> switchTab(t.dataset.view));
 });
 function switchTab(viewId, forceLogin){
+  if(viewId==='adminView' && !forceLogin && !requireAdminPassword()){
+    // mantém o operador na aba em que já estava
+    const atual = document.querySelector('.view.active')?.id || 'fleetView';
+    document.querySelectorAll('.tab').forEach(t=> t.classList.toggle('active', t.dataset.view===atual));
+    return;
+  }
   if(forceLogin){
     document.getElementById('loginView').style.display='none';
     document.getElementById('appShell').style.display='block';
@@ -709,7 +1012,31 @@ function renderAll(){
   renderOccurrences();
   renderAdmin();
 }
+/* Destaque no topo: equipamentos que ESTE operador está usando agora. */
+function renderMyUse(){
+  const box = document.getElementById('myUseBox');
+  if(!box || !session) return;
+  const meus = buildCarts().filter(c=> c.status==='uso' && c.currentDriverName===session.driverName);
+  if(meus.length===0){ box.innerHTML=''; return; }
+  box.innerHTML = `
+    <div class="myuse-box">
+      <span class="eyebrow">Em uso por você</span>
+      <h2>${meus.length===1?'Você está com 1 equipamento':'Você está com '+meus.length+' equipamentos'}</h2>
+      <p class="sub">Toque para fazer a <b>devolução</b>. Enquanto não devolver, o equipamento continua no seu nome.</p>
+      <div class="myuse-grid">
+        ${meus.map(c=>`
+          <div class="myuse-card" onclick="openCartAction('${escapeHtml(c.id)}')">
+            <div class="cart-id">${escapeHtml(c.label)}</div>
+            <div class="cart-type">${escapeHtml(c.type||'')}${c.setor?' · '+escapeHtml(c.setor):''}</div>
+            <div class="cart-meta">Retirado por você em <b>${escapeHtml(c.lastLogTime||'—')}</b></div>
+            <button class="btn btn-primary btn-sm" style="width:100%" onclick="event.stopPropagation(); openCartAction('${escapeHtml(c.id)}')">Devolver este equipamento</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+}
 function renderFleet(){
+  renderMyUse();
   const grid = document.getElementById('fleetGrid');
   const q = (document.getElementById('fleetSearch')?.value||'').trim().toLowerCase();
   const statusFilter = document.getElementById('fleetStatusFilter')?.value || 'all';
@@ -767,7 +1094,6 @@ function startChecklist(cart, type){
     photos: [],
     problemDesc: '',
     motivoDevolucao: '',
-    pegarOutro: null,
     notes: ''
   };
   renderChecklistModal();
@@ -779,7 +1105,6 @@ function checklistIsComplete(cs){
   // Foto é sempre opcional — só exigimos a descrição do problema quando há avaria.
   if(cs.statusGood === false && !cs.problemDesc.trim()) return false;
   if(cs.type === 'entrega' && !cs.motivoDevolucao.trim()) return false;
-  if(cs.type === 'entrega' && cs.pegarOutro === null) return false;
   return true;
 }
 
@@ -794,7 +1119,21 @@ function renderChecklistModal(){
     <h2 style="font-size:16px; margin-bottom:2px;">${cs.cart.type||''}</h2>
     <p class="sub" style="margin-bottom:14px;">Responsável: <b style="color:var(--text-dim);">${session.driverName}</b> · registro com hora automática.</p>
 
-    ${isEntrega ? `<div class="info-box">Ao confirmar a devolução, este equipamento ficará <b>disponível</b> para outros operadores retirarem.</div>` : ''}
+    <div class="move-banner">
+      <div class="move-opt retirada ${isEntrega?'off':'on'}">
+        <div class="mo-title">Retirada</div>
+        <div class="mo-sub">${isEntrega?'Indisponível: já está com você':'Saída do equipamento'}</div>
+      </div>
+      <div class="move-opt entrega ${isEntrega?'on':'off'}">
+        <div class="mo-title">Devolução</div>
+        <div class="mo-sub">${isEntrega?'Entrada do equipamento':'Indisponível: equipamento livre'}</div>
+      </div>
+    </div>
+    <div class="info-box">
+      ${isEntrega
+        ? 'Você está registrando uma <b>DEVOLUÇÃO</b>. Qualquer problema informado abaixo será lançado como <b>ocorrência de devolução</b>. Ao confirmar, o equipamento fica <b>disponível</b> para outros operadores.'
+        : 'Você está registrando uma <b>RETIRADA</b>. Qualquer problema informado abaixo será lançado como <b>ocorrência de retirada</b> (problema que você encontrou ao pegar o equipamento). Ao confirmar, o equipamento fica <b>em uso no seu nome</b>.'}
+    </div>
 
     <div class="status-question">
       <div class="sq-label">O equipamento está em bom estado?</div>
@@ -806,7 +1145,7 @@ function renderChecklistModal(){
 
     ${cs.statusGood!==null ? `
       <div class="field-row">
-        <label>Fotos do equipamento <span style="color:var(--text-faint); text-transform:none; letter-spacing:0;">(opcional, até ${MAX_FOTOS})</span></label>
+        <label>Fotos do equipamento <span style="color:var(--text-faint); text-transform:none; letter-spacing:0;">(opcional, até ${MAX_FOTOS} — vão para a pasta "Fotos equipamento" no Drive e o link entra na planilha)</span></label>
         <div class="photo-gallery">
           ${cs.photos.map((p,i)=>`
             <div class="photo-thumb">
@@ -826,7 +1165,7 @@ function renderChecklistModal(){
     ` : ''}
 
     ${cs.statusGood===false ? `
-      <div class="alert-box show">⚠ Item marcado como fora de boas condições. A descrição do problema abaixo é obrigatória e ficará registrada em seu nome e horário. A foto continua opcional.</div>
+      <div class="alert-box show">⚠ Problema registrado na <b>${isEntrega?'DEVOLUÇÃO':'RETIRADA'}</b> — este registro vai automaticamente para a aba <b>Ocorrências</b>, em seu nome e com a hora atual. A descrição abaixo é obrigatória; a foto continua opcional.</div>
       <div class="field-row">
         <label>Descreva o problema / avaria <span class="req">*</span></label>
         <textarea rows="3" placeholder="Descreva o dano ou problema encontrado no equipamento (ex: pneu furado, freio não funciona, garfo torto...)" oninput="checklistState.problemDesc=this.value; renderChecklistModal();">${cs.problemDesc}</textarea>
@@ -837,13 +1176,6 @@ function renderChecklistModal(){
       <div class="field-row">
         <label>Motivo da devolução <span class="req">*</span></label>
         <textarea rows="2" placeholder="Ex: fim do turno, troca de equipamento, manutenção preventiva..." oninput="checklistState.motivoDevolucao=this.value; renderChecklistModal();">${cs.motivoDevolucao}</textarea>
-      </div>
-      <div class="status-question">
-        <div class="sq-label">Vai retirar outro equipamento agora?</div>
-        <div class="sq-toggle">
-          <button class="good ${cs.pegarOutro===true?'active':''}" onclick="setPegarOutro(true)">Sim</button>
-          <button class="bad ${cs.pegarOutro===false?'active':''}" onclick="setPegarOutro(false)">Não</button>
-        </div>
       </div>
     ` : ''}
 
@@ -863,10 +1195,6 @@ function setStatusGood(val){
   if(val===true){ checklistState.problemDesc=''; }
   renderChecklistModal();
 }
-function setPegarOutro(val){
-  checklistState.pegarOutro = val;
-  renderChecklistModal();
-}
 function triggerPhoto(){
   document.getElementById('fileInput').click();
 }
@@ -876,8 +1204,10 @@ function handlePhotoFile(e){
   if(!file) return;
   if(checklistState.photos.length >= MAX_FOTOS) return;
   const reader = new FileReader();
-  reader.onload = function(ev){
-    checklistState.photos.push(ev.target.result);
+  reader.onload = async function(ev){
+    const comprimida = await comprimirFoto(ev.target.result);
+    if(!checklistState) return;
+    checklistState.photos.push(comprimida);
     renderChecklistModal();
   };
   reader.readAsDataURL(file);
@@ -890,6 +1220,72 @@ function cancelChecklist(){
   checklistState = null;
   document.getElementById('checklistModal').classList.remove('show');
 }
+/* Cache em memória das fotos baixadas do Drive nesta sessão (id -> dataURL). */
+let driveCache = {};
+
+/* Busca a foto pelo próprio Apps Script (acao=foto&id=...).
+   Isso resolve os dois problemas clássicos do Drive:
+   - arquivo sem compartilhamento público (o script lê como dono da pasta);
+   - bloqueio de CORS ao baixar a imagem para embutir na exportação.
+   Devolve um dataURL (base64) ou null. */
+async function fotoViaApi(url){
+  const id = driveIdFromUrl(url);
+  if(!id) return null;
+  if(driveCache[id]) return driveCache[id];
+  try{
+    const res = await fetch(CONFIG.API_URL + '?acao=foto&id=' + encodeURIComponent(id));
+    const data = await res.json();
+    if(!data.ok || !data.base64) return null;
+    const dataUrl = 'data:' + (data.mime || 'image/jpeg') + ';base64,' + data.base64;
+    driveCache[id] = dataUrl;
+    return dataUrl;
+  } catch(err){
+    console.warn('Falha ao buscar foto pelo Apps Script:', err);
+    return null;
+  }
+}
+
+/* Chamado quando a miniatura do Drive não carrega na tela:
+   tenta de novo pelo Apps Script antes de desistir. */
+async function recuperarFotoDrive(img){
+  if(img.dataset.tentado === '1'){
+    img.classList.add('photo-broken');
+    img.removeAttribute('src');
+    img.alt = 'foto indisponível';
+    return;
+  }
+  img.dataset.tentado = '1';
+  const dataUrl = await fotoViaApi(img.dataset.foto || '');
+  if(dataUrl){
+    img.src = dataUrl;
+  } else {
+    img.classList.add('photo-broken');
+    img.removeAttribute('src');
+    img.alt = 'foto indisponível';
+  }
+}
+
+/* Localiza, na planilha já sincronizada, o registro recém-criado deste
+   equipamento — para amarrar as fotos a ele.
+   - retirada: o registro em aberto (sem devolução) mais recente;
+   - devolução: o registro devolvido mais recente.
+   Não usa a coluna A (ID): funciona mesmo com ela vazia. */
+function localizarRegistro(tipo, equipamento){
+  const doEquip = remoteRegistros.filter(r=> r.equipamento === equipamento);
+  if(!doEquip.length) return null;
+  let alvo = null;
+  if(tipo === 'retirada'){
+    doEquip.filter(r=> !r.dataDevolucao).forEach(r=>{
+      if(!alvo || (parseDataBR(r.dataRetirada) > parseDataBR(alvo.dataRetirada))) alvo = r;
+    });
+  } else {
+    doEquip.filter(r=> r.dataDevolucao).forEach(r=>{
+      if(!alvo || (parseDataBR(r.dataDevolucao) > parseDataBR(alvo.dataDevolucao))) alvo = r;
+    });
+  }
+  return alvo;
+}
+
 async function submitChecklist(){
   const cs = checklistState;
   const btn = document.querySelector('#checklistModalBody .btn-primary');
@@ -897,19 +1293,23 @@ async function submitChecklist(){
   if(btn){ btn.disabled = true; btn.textContent = 'Salvando na planilha...'; }
 
   try{
-    // Todas as fotos da galeria vão pro Drive agora (não só a primeira).
-    const fotos = cs.photos.map((p,i)=>({
+    // As fotos vão para o Drive (pasta "Fotos equipamento", via Apps Script) e
+    // também ficam numa cópia local neste aparelho.
+    const qtdFotos = cs.photos.length;
+    const carimbo = Date.now();
+    const fotosPayload = cs.photos.map((p,i)=>({
       base64: p,
-      nome: cs.cart.label + '_' + cs.type + '_' + (i+1) + '_' + Date.now() + '.jpg',
+      nome: cs.cart.label + '_' + (cs.type==='retirada'?'retirada':'devolucao') + '_' + (i+1) + '_' + carimbo + '.jpg',
       mime: 'image/jpeg'
     }));
+    let resposta;
 
     if(cs.type === 'retirada'){
       const obsRetirada = [
         cs.statusGood===false ? ('[AVARIA] ' + cs.problemDesc) : '',
         cs.notes || ''
       ].filter(Boolean).join(' | ');
-      await apiPost({
+      resposta = await apiPost({
         acao: 'retirar',
         equipamento: cs.cart.label,
         tipo: cs.cart.type,
@@ -917,32 +1317,49 @@ async function submitChecklist(){
         usuario: session.driverName,
         checklist: cs.statusGood===false ? 'AVARIA' : 'OK',
         observacoes: obsRetirada,
-        fotos: fotos
+        fotos: fotosPayload,
+        fotosCount: qtdFotos
       });
     } else {
       const parts = [];
       if(cs.statusGood===false) parts.push('[AVARIA] ' + cs.problemDesc);
       if(cs.motivoDevolucao) parts.push('Motivo: ' + cs.motivoDevolucao);
       if(cs.notes) parts.push('Obs: ' + cs.notes);
-      await apiPost({
+      resposta = await apiPost({
         acao: 'devolver',
         equipamento: cs.cart.label,
         usuario: session.driverName,
         observacoes: parts.join(' | '),
-        fotos: fotos
+        fotos: fotosPayload,
+        fotosCount: qtdFotos
       });
     }
 
+    // Recarrega a planilha e amarra as fotos ao registro recém-criado.
+    // A chave é equipamento + data/hora (não depende da coluna A da planilha).
     await syncFromBackend();
-    const wantsAnother = cs.type==='entrega' && cs.pegarOutro===true;
+
+    if(qtdFotos){
+      const alvo = localizarRegistro(cs.type, cs.cart.label);
+      if(alvo){
+        const chave = chaveRegistro(cs.type==='retirada' ? 'ret' : 'dev', alvo);
+        try{
+          await savePhotosLocal(chave, cs.photos);
+        } catch(errFoto){
+          console.warn('Não foi possível guardar a cópia local da foto:', errFoto);
+        }
+      }
+      // Se o script novo estiver publicado, o link do Drive já está na planilha
+      // (coluna I / M) e a foto aparece em qualquer aparelho.
+      const linkDrive = resposta && (resposta.fotoRetiradaUrl || resposta.fotoDevolucaoUrl);
+      if(!linkDrive){
+        console.warn('O Apps Script não devolveu link do Drive — provável implantação antiga. As fotos ficaram só neste aparelho.');
+      }
+    }
+
     checklistState = null;
     document.getElementById('checklistModal').classList.remove('show');
     renderAll();
-    if(wantsAnother){
-      switchTab('fleetView');
-      document.querySelectorAll('.tab').forEach(t=> t.classList.toggle('active', t.dataset.view==='fleetView'));
-      setTimeout(()=>{ alert('Equipamento devolvido com sucesso. Selecione agora o próximo equipamento que deseja retirar.'); }, 50);
-    }
   } catch(err){
     alert('Não foi possível salvar na planilha. Verifique sua internet e tente novamente.\n\nDetalhe: ' + err.message);
     if(btn){ btn.disabled = false; btn.textContent = originalLabel; }
@@ -957,68 +1374,147 @@ function renderHistoryFilter(){
   if(prev) sel.value = prev;
   sel.onchange = renderHistory;
 }
+let historyCache = [];   // guarda os registros exibidos, para o botão de exportar
+let photoViewer = { fotos: [], index: 0, legenda: '' };
+
+/* Bloco de fotos com rótulo do movimento. Se o registro tem foto mas ela não
+   está neste aparelho, mostra o aviso em vez de deixar o espaço vazio. */
+function renderPhotoBlock(titulo, fotos, esperadas, legenda){
+  fotos = fotos || [];
+  if(!fotos.length){
+    if(esperadas > 0){
+      return `<div class="photo-missing">
+        📷 ${esperadas} foto(s) constam neste registro, mas não foi possível carregá-las aqui. Verifique se as fotos da pasta "Fotos equipamento" no Drive estão compartilhadas como "qualquer pessoa com o link".
+      </div>`;
+    }
+    return `<div class="photo-none">Sem foto anexada nesta ${titulo.toLowerCase().indexOf('devolu')>=0?'devolução':'retirada'}.</div>`;
+  }
+  const legendaSafe = String(legenda||'').replace(/'/g,"\\'");
+  const thumbs = fotos.map((p,i)=>{
+    const thumb = photoThumbUrl(p, 240);
+    return `<img src="${thumb}" data-foto="${escapeHtml(p)}" alt="foto ${i+1}" title="Clique para ampliar"
+      onclick="openPhotoViewer(${i}, '${legendaSafe}', this.parentNode.dataset.key)"
+      onerror="recuperarFotoDrive(this)">`;
+  }).join('');
+  const key = registrarGaleria(fotos);
+  return `
+    <div class="photo-block">
+      <div class="photo-block-title">${escapeHtml(titulo)} <span>(${fotos.length})</span></div>
+      <div class="te-photos" data-key="${key}">${thumbs}</div>
+    </div>`;
+}
+// as galerias exibidas ficam num índice em memória, para o visualizador saber o que abrir
+let galeriaIndex = {};
+let galeriaSeq = 0;
+function registrarGaleria(fotos){
+  const key = 'g' + (++galeriaSeq);
+  galeriaIndex[key] = fotos;
+  return key;
+}
+function openPhotoViewer(index, legenda, key){
+  photoViewer = { fotos: galeriaIndex[key] || [], index: index||0, legenda: legenda||'' };
+  renderPhotoViewer();
+  document.getElementById('photoModal').classList.add('show');
+}
+function movePhotoViewer(delta){
+  const n = photoViewer.fotos.length;
+  if(!n) return;
+  photoViewer.index = (photoViewer.index + delta + n) % n;
+  renderPhotoViewer();
+}
+function renderPhotoViewer(){
+  const src = photoViewer.fotos[photoViewer.index];
+  const img = document.getElementById('photoModalImg');
+  const err = document.getElementById('photoModalError');
+  const nav = document.getElementById('photoModalNav');
+  err.style.display = 'none';
+  img.style.display = 'block';
+  // se o Drive não entregar a imagem, busca pelo Apps Script antes de desistir
+  img.onerror = async ()=>{
+    const dataUrl = await fotoViaApi(src);
+    if(dataUrl){ img.onerror = null; img.src = dataUrl; return; }
+    img.style.display='none'; err.style.display='block';
+  };
+  img.src = photoThumbUrl(src, 1600);
+  document.getElementById('photoModalCaption').textContent = photoViewer.legenda;
+  nav.style.display = photoViewer.fotos.length > 1 ? 'flex' : 'none';
+  document.getElementById('photoModalCount').textContent = (photoViewer.index+1) + ' / ' + photoViewer.fotos.length;
+  const link = document.getElementById('photoModalOpen');
+  const ehDrive = !!driveIdFromUrl(src);
+  link.style.display = ehDrive ? 'block' : 'none';
+  if(ehDrive) link.href = photoOpenUrl(src);
+}
 function renderHistory(){
   const filter = document.getElementById('historyFilter')?.value || 'all';
-  const entries = buildHistory().filter(l=> filter==='all' || l.cartLabel===filter);
+  historyCache = buildHistory().filter(l=> filter==='all' || l.cartLabel===filter);
   const list = document.getElementById('historyList');
-  if(entries.length===0){
+  if(historyCache.length===0){
     list.innerHTML = `<div class="empty-state"><div class="big">◌</div>Nenhum registro ainda.</div>`;
     return;
   }
-  list.innerHTML = entries.map(l=>{
-    const photoThumbs = l.photos.map(p=>`<img src="${p}" onclick="showPhoto('${p.replace(/'/g,"\\'")}')">`).join('');
+  list.innerHTML = historyCache.map((l,i)=>{
+    const titulo = l.type==='retirada' ? 'Foto(s) da RETIRADA' : 'Foto(s) da DEVOLUÇÃO';
+    const legenda = (l.type==='retirada'?'Retirada':'Devolução') + ' — ' + l.cartLabel + ' · ' + (l.driverName||'—') + ' · ' + (l.timeLabel||'');
     return `
     <div class="timeline-entry">
       <div class="te-dot ${l.type==='retirada'?'retirada':'entrega'}"></div>
       <div class="te-body">
         <div class="te-top">
-          <span class="te-title">${l.type==='retirada'?'Retirada':'Devolução'} — ${l.cartLabel}</span>
-          <span class="te-time">${l.timeLabel}</span>
+          <span class="te-title">${l.type==='retirada'?'Retirada':'Devolução'} — ${escapeHtml(l.cartLabel)}</span>
+          <span class="te-time">${escapeHtml(l.timeLabel)}</span>
         </div>
         <div class="te-detail">
-          Responsável: <b>${l.driverName||'—'}</b>
+          Responsável: <b>${escapeHtml(l.driverName||'—')}</b>
           ${l.statusGood===false ? ` &nbsp; <span class="badge-danger">Equipamento com avaria</span>` : ` &nbsp; <span class="badge-ok">Bom estado</span>`}
-          ${l.problemDesc ? `<br>Problema descrito: ${l.problemDesc}` : ''}
+          ${l.problemDesc ? `<br>Problema descrito: ${escapeHtml(l.problemDesc)}` : ''}
         </div>
-        <div class="te-photos">${photoThumbs}</div>
+        ${renderPhotoBlock(titulo, l.photos, l.fotosEsperadas, legenda)}
+        <div class="te-actions">
+          <button class="btn btn-sm btn-ghost" onclick="openExportModal('history', ${i})">⤓ Exportar resumo</button>
+        </div>
       </div>
     </div>`;
   }).join('');
 }
-function showPhoto(src){
-  document.getElementById('photoModalImg').src = src;
-  document.getElementById('photoModal').classList.add('show');
-}
 function closePhotoModal(){
   document.getElementById('photoModal').classList.remove('show');
+  document.getElementById('photoModalImg').src = '';
 }
 
 /* ---------------- OCCURRENCES ---------------- */
+let occurrenceCache = [];
 function renderOccurrences(){
   const list = document.getElementById('occurrenceList');
-  const occurrences = buildOccurrences();
-  if(occurrences.length===0){
+  occurrenceCache = buildOccurrences();
+  if(occurrenceCache.length===0){
     list.innerHTML = `<div class="empty-state"><div class="big">✓</div>Nenhuma ocorrência registrada.</div>`;
     return;
   }
-  list.innerHTML = occurrences.map(o=>`
+  list.innerHTML = occurrenceCache.map((o,i)=>{
+    const naRetirada = o.origem==='retirada';
+    const legenda = 'Ocorrência — ' + o.cartLabel + ' · ' + (o.assignedDriverName||'—') + ' · ' + (o.detectedTimeLabel||'');
+    return `
     <div class="timeline-entry">
       <div class="te-dot ocorrencia"></div>
       <div class="te-body">
         <div class="te-top">
-          <span class="te-title">${o.cartLabel} — Ocorrência</span>
-          <span class="te-time">${o.detectedTimeLabel||'—'}</span>
+          <span class="te-title">${escapeHtml(o.cartLabel)} — Ocorrência na ${naRetirada?'RETIRADA':'DEVOLUÇÃO'}</span>
+          <span class="te-time">${escapeHtml(o.detectedTimeLabel||'—')}</span>
         </div>
         <div class="te-detail">
-          Responsável identificado pela cadeia de custódia: <b>${o.assignedDriverName||'—'}</b><br>
-          ${o.description}
+          Responsável identificado pela cadeia de custódia: <b>${escapeHtml(o.assignedDriverName||'—')}</b><br>
+          ${escapeHtml(o.description)}
         </div>
-        <div style="margin-top:8px;">
+        ${renderPhotoBlock(naRetirada?'Foto(s) da RETIRADA (momento da avaria)':'Foto(s) da DEVOLUÇÃO (momento da avaria)', o.photos, o.fotosEsperadas, legenda)}
+        ${renderPhotoBlock(naRetirada?'Foto(s) da DEVOLUÇÃO deste mesmo registro':'Foto(s) da RETIRADA deste mesmo registro', o.photosOutro, o.fotosEsperadasOutro, legenda)}
+        <div class="te-actions">
           <span class="te-tag">status: ${o.status}</span>
-          ${o.status==='aberta' ? `<button class="btn btn-sm" style="margin-top:8px;" onclick="resolveOccurrence('${o.id}')">Marcar como resolvida</button>` : ''}
+          <button class="btn btn-sm btn-ghost" onclick="openExportModal('occurrence', ${i})">⤓ Exportar ocorrência</button>
+          ${o.status==='aberta' ? `<button class="btn btn-sm" onclick="resolveOccurrence('${o.id}')">Marcar como resolvida</button>` : ''}
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 function resolveOccurrence(id){
   // Observação: a resolução fica registrada neste navegador (a planilha não tem
@@ -1026,6 +1522,362 @@ function resolveOccurrence(id){
   resolvedOccurrenceIds.add(id);
   saveResolvedIds();
   renderAll();
+}
+
+/* ============================================================
+   EXPORTAÇÃO DE REGISTROS (Histórico e Ocorrências)
+   Gera um resumo com operador, data/hora, condição, problema, observações
+   e as fotos anexadas. Formatos: PDF (via diálogo de impressão do navegador),
+   Word (.doc), página HTML e texto puro. Não depende de nenhuma biblioteca
+   externa — funciona mesmo com a internet limitada da fábrica.
+============================================================ */
+let exportTarget = null;
+
+function slugify(s){
+  return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-+|-+$/g,'').toLowerCase();
+}
+
+function buildExportRecord(kind, index){
+  if(kind === 'history'){
+    const l = historyCache[index];
+    if(!l) return null;
+    return {
+      kind:'history',
+      titulo: (l.type==='retirada' ? 'Registro de RETIRADA' : 'Registro de DEVOLUÇÃO') + ' — ' + l.cartLabel,
+      linhas: [
+        ['Tipo de movimento', l.type==='retirada' ? 'RETIRADA (saída do equipamento)' : 'DEVOLUÇÃO (entrada do equipamento)'],
+        ['Equipamento', l.cartLabel],
+        ['Tipo do equipamento', l.cartType || '—'],
+        ['Setor', l.setor || '—'],
+        ['Operador responsável', l.driverName || '—'],
+        ['Data e hora do registro', l.timeLabel || '—'],
+        ['Condição informada', l.statusGood===false ? 'COM AVARIA' : 'Bom estado'],
+        ['Problema descrito', l.problemDesc || '—'],
+        ['Observações registradas', l.obsFull || '—'],
+        ['ID do registro na planilha', String(l.idRegistro || '—')]
+      ],
+      fotos: l.photos || [],
+      arquivo: 'registro-' + slugify(l.cartLabel) + '-' + (l.type==='retirada'?'retirada':'devolucao') + '-' + slugify(l.timeLabel)
+    };
+  }
+  const o = occurrenceCache[index];
+  if(!o) return null;
+  return {
+    kind:'occurrence',
+    titulo: 'Ocorrência / Avaria — ' + o.cartLabel,
+    linhas: [
+      ['Origem da ocorrência', o.origem==='retirada' ? 'Detectada na RETIRADA' : 'Detectada na DEVOLUÇÃO'],
+      ['Equipamento', o.cartLabel],
+      ['Tipo do equipamento', o.cartType || '—'],
+      ['Setor', o.setor || '—'],
+      ['Operador responsável', o.assignedDriverName || '—'],
+      ['Data e hora', o.detectedTimeLabel || '—'],
+      ['Descrição do problema', o.description || '—'],
+      ['Status da ocorrência', o.status === 'resolvida' ? 'Resolvida' : 'Aberta']
+    ],
+    fotos: o.photos || [],
+    arquivo: 'ocorrencia-' + slugify(o.cartLabel) + '-' + slugify(o.detectedTimeLabel)
+  };
+}
+
+function openExportModal(kind, index){
+  exportTarget = buildExportRecord(kind, index);
+  if(!exportTarget){ alert('Não foi possível montar o resumo deste registro.'); return; }
+  document.getElementById('exportModalBody').innerHTML = `
+    <span class="eyebrow">Exportar registro</span>
+    <h2 style="font-size:16px; margin-bottom:2px;">${escapeHtml(exportTarget.titulo)}</h2>
+    <p class="sub">O arquivo inclui operador, data/hora, condição, problema, observações e as fotos anexadas.</p>
+    <div class="export-list">
+      <button class="btn" onclick="doExport('pdf')">📄 &nbsp;PDF (abre a impressão — escolha "Salvar como PDF")</button>
+      <button class="btn" onclick="doExport('word')">📝 &nbsp;Word (.doc)</button>
+      <button class="btn" onclick="doExport('html')">🌐 &nbsp;Página HTML (.html)</button>
+      <button class="btn" onclick="doExport('txt')">🗒️ &nbsp;Texto simples (.txt)</button>
+    </div>
+    <div class="export-hint" id="exportHint">
+      As fotos vão <b>embutidas no arquivo exportado</b>. Quando a foto foi tirada neste aparelho, ela é embutida direto; quando veio do Drive, o app baixa a imagem na hora da exportação — se o Drive bloquear o download, o arquivo sai com o link clicável da foto.
+    </div>
+    <button class="btn btn-ghost" style="margin-top:14px;" onclick="closeExportModal()">Cancelar</button>
+  `;
+  document.getElementById('exportModal').classList.add('show');
+}
+function closeExportModal(){
+  document.getElementById('exportModal').classList.remove('show');
+  exportTarget = null;
+}
+
+// Tenta baixar a foto e transformá-la em base64 (para o arquivo ficar autossuficiente).
+async function fotoParaDataUrl(url){
+  try{
+    const res = await fetch(photoThumbUrl(url, 1200));
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const blob = await res.blob();
+    if(!blob.type.startsWith('image/')) throw new Error('não é imagem');
+    return await new Promise((resolve, reject)=>{
+      const fr = new FileReader();
+      fr.onload = ()=> resolve(fr.result);
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+  } catch(err){
+    return null; // cai no plano B: link + img remota
+  }
+}
+
+async function buildFotosHtml(fotos){
+  if(!fotos.length) return '<p class="sem-foto">Nenhuma foto anexada a este registro.</p>';
+  const blocos = [];
+  for(let i=0; i<fotos.length; i++){
+    const original = fotos[i];
+    let dataUrl = null;
+    if(original.startsWith('data:')) dataUrl = original;
+    else dataUrl = await fotoParaDataUrl(original) || await fotoViaApi(original);
+    const src = dataUrl || photoThumbUrl(original, 1200);
+    const link = photoOpenUrl(original);
+    blocos.push(`
+      <div class="foto">
+        <img src="${src}" alt="Foto ${i+1}">
+        <div class="foto-cap">Foto ${i+1} de ${fotos.length}${dataUrl ? '' : ' — se a imagem não aparecer, abra: <a href="'+link+'">'+link+'</a>'}</div>
+      </div>`);
+  }
+  return blocos.join('');
+}
+
+function buildReportHTML(rec, fotosHtml){
+  const linhas = rec.linhas.map(([k,v])=>`
+    <tr><th>${escapeHtml(k)}</th><td>${escapeHtml(v)}</td></tr>`).join('');
+  return `<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><title>${escapeHtml(rec.titulo)}</title>
+<style>
+  body{ font-family: Arial, Helvetica, sans-serif; color:#111; margin:28px; }
+  h1{ font-size:18px; margin:0 0 2px; }
+  .sub{ font-size:12px; color:#555; margin-bottom:18px; }
+  table{ border-collapse:collapse; width:100%; margin-bottom:22px; }
+  th,td{ border:1px solid #ccc; padding:8px 10px; font-size:12.5px; text-align:left; vertical-align:top; }
+  th{ background:#f2f4f6; width:210px; }
+  h2{ font-size:14px; margin:0 0 10px; }
+  .foto{ margin-bottom:16px; page-break-inside:avoid; }
+  .foto img{ max-width:100%; max-height:440px; border:1px solid #ccc; display:block; }
+  .foto-cap{ font-size:11px; color:#666; margin-top:4px; }
+  .sem-foto{ font-size:12px; color:#666; }
+  .rodape{ margin-top:26px; border-top:1px solid #ddd; padding-top:10px; font-size:10.5px; color:#777; }
+</style></head><body>
+<h1>${escapeHtml(rec.titulo)}</h1>
+<div class="sub">Docol — Controle de Frota · Empilhadeiras &amp; Equipamentos</div>
+<table>${linhas}</table>
+<h2>Fotos anexadas</h2>
+${fotosHtml}
+<div class="rodape">
+  Documento gerado em ${new Date().toLocaleString('pt-BR')} por ${escapeHtml(session ? session.driverName : '—')} pelo app Controle de Frota Docol.
+  Dados originais na Planilha Google (cadeia de custódia).
+</div>
+</body></html>`;
+}
+
+function buildReportTXT(rec){
+  const linhas = rec.linhas.map(([k,v])=> k + ': ' + v).join('\n');
+  const fotos = rec.fotos.length
+    ? rec.fotos.map((f,i)=> '  Foto ' + (i+1) + ': ' + photoOpenUrl(f)).join('\n')
+    : '  Nenhuma foto anexada.';
+  return [
+    'DOCOL — CONTROLE DE FROTA',
+    rec.titulo,
+    ''.padEnd(50,'-'),
+    linhas,
+    '',
+    'FOTOS:',
+    fotos,
+    '',
+    'Gerado em ' + new Date().toLocaleString('pt-BR') + ' por ' + (session ? session.driverName : '—')
+  ].join('\n');
+}
+
+function baixarArquivo(conteudo, nome, mime){
+  const blob = new Blob([conteudo], {type: mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nome;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=> URL.revokeObjectURL(url), 4000);
+}
+
+async function doExport(fmt){
+  const rec = exportTarget;
+  if(!rec) return;
+  const hint = document.getElementById('exportHint');
+  if(hint) hint.textContent = 'Preparando arquivo e baixando as fotos... aguarde.';
+  try{
+    if(fmt === 'txt'){
+      baixarArquivo(buildReportTXT(rec), rec.arquivo + '.txt', 'text/plain;charset=utf-8');
+      closeExportModal();
+      return;
+    }
+    const fotosHtml = await buildFotosHtml(rec.fotos);
+    const html = buildReportHTML(rec, fotosHtml);
+
+    if(fmt === 'html'){
+      baixarArquivo(html, rec.arquivo + '.html', 'text/html;charset=utf-8');
+    } else if(fmt === 'word'){
+      // .doc lido pelo Word/Google Docs/LibreOffice: HTML com cabeçalho do Office.
+      const doc = '<html xmlns:o="urn:schemas-microsoft-com:office:office" '
+        + 'xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'
+        + '<head><meta charset="utf-8"><!--[if gte mso 9]><xml><w:WordDocument>'
+        + '<w:View>Print</w:View></w:WordDocument></xml><![endif]--></head>'
+        + html.replace(/^[\s\S]*?<body>/, '<body>');
+      baixarArquivo('\ufeff' + doc, rec.arquivo + '.doc', 'application/msword');
+    } else if(fmt === 'pdf'){
+      const win = window.open('', '_blank');
+      if(!win){
+        alert('O navegador bloqueou a janela de impressão. Libere os pop-ups para este site ou use a opção Word/HTML.');
+        if(hint) hint.textContent = '';
+        return;
+      }
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      // dá tempo das imagens carregarem antes de abrir a impressão
+      setTimeout(()=>{ try{ win.focus(); win.print(); } catch(e){} }, 700);
+    }
+    closeExportModal();
+  } catch(err){
+    alert('Não foi possível gerar o arquivo.\n\nDetalhe: ' + err.message);
+    if(hint) hint.textContent = '';
+  }
+}
+
+/* ============================================================
+   GERAR HTML COM AS FOTOS EMBUTIDAS
+   Monta uma cópia deste mesmo app, com as fotos gravadas dentro do código
+   (constante FOTOS_EMBUTIDAS), e baixa como arquivo .html.
+   Esse arquivo é a versão "com fotos" para distribuir/arquivar.
+============================================================ */
+function tamanhoLegivel(bytes){
+  if(bytes < 1024*1024) return (bytes/1024).toFixed(0) + ' KB';
+  return (bytes/(1024*1024)).toFixed(1) + ' MB';
+}
+function gerarHtmlComFotos(){
+  const total = Object.keys(photoStore).length;
+  if(total === 0){
+    alert('Não há fotos guardadas para embutir. Registre uma retirada/devolução com foto primeiro.');
+    return;
+  }
+
+  // 1) clona a página e devolve ela ao estado "limpo" (tela de login, listas vazias)
+  const clone = document.documentElement.cloneNode(true);
+  const q = sel => clone.querySelector(sel);
+  const login = q('#loginView'); if(login) login.style.display = '';
+  const shell = q('#appShell');  if(shell) shell.style.display = 'none';
+  ['#fleetGrid','#historyList','#occurrenceList','#myUseBox','#driverListAdmin',
+   '#driverSelect','#keypad','#historyFilter','#exportModalBody','#checklistModalBody']
+    .forEach(sel=>{ const el = q(sel); if(el) el.innerHTML = ''; });
+  const pm = q('#photoModalImg'); if(pm) pm.removeAttribute('src');
+  clone.querySelectorAll('.modal-overlay').forEach(m=> m.classList.remove('show'));
+  clone.querySelectorAll('#pinDots .d').forEach(d=> d.classList.remove('filled'));
+  const erro = q('#loginError'); if(erro) erro.textContent = '';
+  clone.querySelectorAll('.tab').forEach(t=> t.classList.toggle('active', t.dataset.view==='fleetView'));
+  clone.querySelectorAll('.view').forEach(v=> v.classList.toggle('active', v.id==='fleetView'));
+
+  // 2) injeta as fotos no lugar da constante FOTOS_EMBUTIDAS
+  const json = JSON.stringify(photoStore);
+  const bloco = '/* __FOTOS_EMBUTIDAS_INICIO__ */\nconst FOTOS_EMBUTIDAS = '
+    + json.replace(/<\/script>/gi, '<\\/script>')
+    + ';\n/* __FOTOS_EMBUTIDAS_FIM__ */';
+
+  let html = '<!DOCTYPE html>\n' + clone.outerHTML;
+  const marcador = /\/\* __FOTOS_EMBUTIDAS_INICIO__ \*\/[\s\S]*?\/\* __FOTOS_EMBUTIDAS_FIM__ \*\//;
+  if(!marcador.test(html)){
+    alert('Não encontrei o bloco de fotos embutidas no código. Use o arquivo HTML original do app.');
+    return;
+  }
+  html = html.replace(marcador, ()=> bloco);
+
+  const nome = 'controle-frota-docol-com-fotos-' + new Date().toISOString().slice(0,10) + '.html';
+  const blob = new Blob([html], {type:'text/html;charset=utf-8'});
+  if(!confirm('Serão embutidas as fotos de ' + total + ' registro(s).\nTamanho do arquivo: ' + tamanhoLegivel(blob.size) + '\n\nBaixar agora?')) return;
+  baixarArquivo(html, nome, 'text/html;charset=utf-8');
+}
+
+/* ============================================================
+   DIAGNÓSTICO DE FOTOS
+   Mostra, passo a passo, onde a foto está parando.
+============================================================ */
+async function rodarDiagnostico(){
+  const out = document.getElementById('diagOut');
+  out.style.display = 'block';
+  const log = [];
+  const p = t => { log.push(t); out.textContent = log.join('\n'); };
+
+  p('1) URL do Apps Script:');
+  p('   ' + CONFIG.API_URL);
+
+  p('');
+  p('2) Lendo a planilha (acao=listar)...');
+  let registros = [];
+  try{
+    registros = await apiListar();
+    p('   OK — ' + registros.length + ' registro(s) lidos.');
+  } catch(err){
+    p('   FALHOU: ' + err.message);
+    p('   >> O app não conversa com o script. Verifique a URL e se a implantação está como "Qualquer pessoa".');
+    return;
+  }
+
+  const comFoto = registros.filter(r=> String(r.fotoRetirada||'').trim() || String(r.fotoDevolucao||'').trim());
+  p('');
+  p('3) Colunas de foto (I = retirada, M = devolução):');
+  if(!registros.length){ p('   Nenhum registro na planilha.'); return; }
+  registros.slice(-3).forEach(r=>{
+    p('   [' + r.idRegistro + '] ' + r.equipamento);
+    p('      I (retirada) : ' + (String(r.fotoRetirada||'').trim() || '(vazio)'));
+    p('      M (devolução): ' + (String(r.fotoDevolucao||'').trim() || '(vazio)'));
+  });
+  if(!comFoto.length){
+    p('');
+    p('   >> DIAGNÓSTICO: nenhum link de foto na planilha.');
+    p('      Causa provável: o Apps Script NOVO ainda não foi publicado');
+    p('      (Implantar > Gerenciar implantações > editar > Nova versão),');
+    p('      ou o registro foi feito sem foto anexada.');
+    return;
+  }
+
+  const alvo = comFoto[comFoto.length-1];
+  const link = String(alvo.fotoDevolucao||'').trim() || String(alvo.fotoRetirada||'').trim();
+  const primeiro = link.split(',')[0].trim();
+  const id = driveIdFromUrl(primeiro);
+  p('');
+  p('4) Testando a última foto:');
+  p('   Link  : ' + primeiro);
+  p('   ID    : ' + (id || '(não consegui extrair o ID do link)'));
+  if(!id){ p('   >> O link da planilha não parece ser um link do Drive.'); return; }
+
+  p('');
+  p('5) Baixando a foto pelo Apps Script (acao=foto)...');
+  const viaApi = await fotoViaApi(primeiro);
+  if(viaApi){
+    p('   OK — foto baixada (' + Math.round(viaApi.length/1024) + ' KB em base64).');
+    p('   >> A foto VAI aparecer no site e VAI junto na exportação.');
+  } else {
+    p('   FALHOU.');
+    p('   >> Causa provável: o script publicado ainda não tem a ação "foto".');
+    p('      Cole a versão nova do backend e publique NOVA VERSÃO da implantação.');
+  }
+
+  p('');
+  p('6) Testando a miniatura pública do Drive...');
+  const okThumb = await new Promise(resolve=>{
+    const im = new Image();
+    im.onload = ()=> resolve(true);
+    im.onerror = ()=> resolve(false);
+    im.src = photoThumbUrl(primeiro, 200);
+    setTimeout(()=> resolve(false), 6000);
+  });
+  p(okThumb ? '   OK — a foto está compartilhada por link.'
+            : '   Não carregou — a foto não está pública. Sem problema: o app usa o caminho do Apps Script (passo 5).');
+
+  p('');
+  p('7) Fotos guardadas neste aparelho: ' + Object.keys(photoStore).length + ' registro(s).');
 }
 
 /* ---------------- ADMIN ---------------- */
@@ -1061,7 +1913,8 @@ function renderAdmin(){
   `).join('');
 }
 function exportData(){
-  const payload = { drivers: DB.drivers, registros: remoteRegistros };
+  // Backup completo: operadores, registros da planilha e as fotos guardadas neste aparelho.
+  const payload = { drivers: DB.drivers, registros: remoteRegistros, fotos: photoStore };
   const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
