@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>Docol — Controle de Frota</title>
 <style>
 /* =========================================================
@@ -10,7 +10,7 @@
    Idêntico à paleta da logo Docol
 ========================================================= */
 :root{
-  --bg:        #0a0a0a;acc
+  --bg:        #0a0a0a;
   --bg-panel:  #111111;
   --bg-raised: #1a1a1a;
   --line:      #2a2a2a;
@@ -75,8 +75,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 
 /* ===== LOGIN ===== */
 .login-wrap{
-  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+  min-height:100vh;min-height:-webkit-fill-available;
+  display:flex;align-items:flex-start;justify-content:center;
+  padding:20px 16px 40px;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
   background:radial-gradient(ellipse at 30% 20%,rgba(0,174,239,.07) 0%,transparent 55%),#000;
+}
+@media(min-height:700px){
+  .login-wrap{align-items:center;}
 }
 .login-box{
   width:100%;max-width:390px;
@@ -85,6 +91,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
   border-radius:14px;
   padding:30px 26px;
   box-shadow:0 0 0 1px rgba(0,174,239,.08),0 28px 60px rgba(0,0,0,.7);
+  overflow:visible;
 }
 .login-logo-wrap{
   display:flex;justify-content:center;align-items:center;
@@ -99,27 +106,35 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 .oper-label{font-family:var(--mono);font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:6px;}
 select.oper-select{
   width:100%;background:var(--bg-raised);border:1px solid var(--line);color:var(--text);
-  padding:11px 14px;border-radius:var(--r);font-size:14px;font-family:var(--sans);
-  appearance:none;
+  padding:13px 40px 13px 14px;border-radius:var(--r);font-size:16px;font-family:var(--sans);
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2300AEEF' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;
+  background-repeat:no-repeat;background-position:right 14px center;
+  touch-action:manipulation;
+  cursor:pointer;
+  min-height:48px;
   transition:.12s;
 }
 select.oper-select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(0,174,239,.12);}
 
 /* pin */
 .pin-wrap{margin:20px 0 0;}
-.pin-dots{display:flex;gap:14px;justify-content:center;margin-bottom:18px;}
-.pin-dots .d{width:15px;height:15px;border-radius:50%;border:2px solid var(--line);transition:all .15s;}
-.pin-dots .d.filled{background:var(--blue);border-color:var(--blue);box-shadow:0 0 10px rgba(0,174,239,.4);}
+.pin-dots{display:flex;gap:16px;justify-content:center;margin-bottom:20px;padding:8px 0;}
+.pin-dots .d{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);transition:all .15s;}
+.pin-dots .d.filled{background:var(--blue);border-color:var(--blue);box-shadow:0 0 12px rgba(0,174,239,.5);}
 .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
 .keypad button{
   aspect-ratio:1.1;border-radius:var(--r);border:1px solid var(--line);
   background:var(--bg-raised);color:var(--text);font-size:20px;font-family:var(--mono);
   cursor:pointer;transition:.12s;font-weight:600;
+  /* garante área de toque mínima em mobile */
+  min-height:52px;
+  -webkit-tap-highlight-color:rgba(0,174,239,.2);
+  touch-action:manipulation;
+  user-select:none;-webkit-user-select:none;
 }
 .keypad button:hover{border-color:var(--blue);color:var(--blue);}
-.keypad button:active{background:var(--blue-dim);}
+.keypad button:active,.keypad button:focus{background:var(--blue-dim);border-color:var(--blue);outline:none;}
 .keypad button.wide{font-size:13px;color:var(--text-dim);}
 .login-error{color:var(--red);font-size:12px;text-align:center;margin-top:12px;min-height:16px;}
 .login-admin-link{margin-top:18px;border-top:1px solid var(--line-soft);padding-top:14px;}
@@ -278,7 +293,7 @@ select:focus,input:focus,textarea:focus{outline:none;border-color:var(--blue);bo
 .photo-modal-actions a{flex:1;text-align:center;text-decoration:none;padding:9px 12px;border-radius:var(--r);border:1px solid var(--line);color:var(--text-dim);font-size:12px;font-family:var(--mono);}
 
 /* ===== RESPONSIVE ===== */
-/* Garante que inputs nunca disparem zoom no iOS */
+/* Impede zoom ao focar inputs no iOS */
 input,select,textarea{font-size:16px;}
 
 /* ---- NOTEBOOK / TABLET LANDSCAPE (≤1024px) ---- */
@@ -302,8 +317,9 @@ input,select,textarea{font-size:16px;}
   .filter-col{min-width:140px;flex:1 1 140px;}
   .charts-container{grid-template-columns:1fr;}
   .myuse-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));}
-  .keypad button{font-size:18px;}
-  .login-box{padding:24px 20px;}
+  /* Login no tablet */
+  .login-box{padding:24px 20px;max-width:440px;}
+  .keypad button{min-height:56px;font-size:22px;}
 }
 
 /* ---- MOBILE GRANDE (≤640px) ---- */
@@ -312,8 +328,8 @@ input,select,textarea{font-size:16px;}
   .brand-logo{height:26px;}
   .session-chip{font-size:11px;}
   .session-chip button{padding:4px 8px;font-size:10px;}
-  .tabs{padding:0 8px;}
-  .tab{padding:10px 10px;font-size:12px;}
+  .tabs{padding:0 6px;}
+  .tab{padding:10px 9px;font-size:12px;}
   .view{padding:14px 10px 70px;}
   .card{padding:12px;}
   .section-title h1{font-size:16px;}
@@ -324,15 +340,25 @@ input,select,textarea{font-size:16px;}
   .cart-type{font-size:10px;}
   .myuse-grid{grid-template-columns:1fr;}
   .charts-container{grid-template-columns:1fr;}
+  /* Modal como bottom-sheet */
   .modal-overlay{padding:0;align-items:flex-end;}
-  .modal-box{max-width:100%;width:100%;border-radius:16px 16px 0 0;max-height:92vh;padding:18px 16px 24px;}
-  .login-box{padding:20px 16px;border-radius:10px;}
-  .login-logo-wrap{padding:14px 18px;}
-  .login-logo-wrap img{height:44px;}
+  .modal-box{max-width:100%;width:100%;border-radius:16px 16px 0 0;max-height:92vh;padding:18px 14px 28px;}
+  /* Login mobile */
+  .login-box{padding:20px 14px;border-radius:10px;max-width:100%;}
+  .login-logo-wrap{padding:12px 16px;margin-bottom:16px;}
+  .login-logo-wrap img{height:42px;}
+  .login-box h1{font-size:17px;}
+  .login-sub{font-size:12px;margin-bottom:14px;}
+  .oper-label{font-size:10px;}
+  select.oper-select{font-size:16px;min-height:48px;}
+  .pin-wrap{margin-top:14px;}
+  .pin-dots{gap:14px;margin-bottom:14px;}
+  .pin-dots .d{width:14px;height:14px;}
   .keypad{gap:8px;}
-  .keypad button{font-size:18px;}
-  .pin-dots .d{width:13px;height:13px;}
-  .pin-dots{gap:12px;}
+  .keypad button{min-height:54px;font-size:20px;border-radius:8px;}
+  .login-error{font-size:12px;margin-top:10px;}
+  .login-admin-link{margin-top:14px;padding-top:12px;}
+  /* Timeline */
   .te-photos img{width:46px;height:46px;}
   .te-actions{flex-wrap:wrap;gap:6px;}
   .btn-sm{padding:6px 10px;font-size:11px;}
@@ -341,11 +367,11 @@ input,select,textarea{font-size:16px;}
 /* ---- MOBILE PEQUENO (≤480px) ---- */
 @media(max-width:480px){
   .fleet-grid{grid-template-columns:1fr;}
-  .tab{padding:9px 8px;font-size:11.5px;}
-  .cart-id{font-size:13px;}
+  .tab{padding:9px 7px;font-size:11.5px;}
   .move-banner{flex-direction:column;}
   .sq-toggle button{padding:10px;}
   .photo-gallery{grid-template-columns:repeat(auto-fill,minmax(72px,1fr));}
+  .keypad button{min-height:50px;font-size:19px;}
 }
 
 /* ---- MOBILE MUITO PEQUENO (≤360px) ---- */
@@ -353,11 +379,15 @@ input,select,textarea{font-size:16px;}
   .topbar{padding:6px 10px;}
   .brand-logo{height:22px;}
   .tabs{padding:0 4px;}
-  .tab{padding:8px 6px;font-size:11px;}
+  .tab{padding:8px 5px;font-size:11px;}
   .view{padding:12px 8px 70px;}
   .fleet-grid{grid-template-columns:1fr;}
-  .login-box{padding:16px 12px;}
-  .keypad button{font-size:16px;}
+  .login-box{padding:14px 12px;}
+  .login-logo-wrap img{height:36px;}
+  .keypad{gap:6px;}
+  .keypad button{min-height:46px;font-size:17px;}
+  .pin-dots .d{width:12px;height:12px;}
+  .pin-dots{gap:11px;}
 }
 </style>
 </head>
@@ -1101,8 +1131,23 @@ async function doExport(fmt){
 function exportData(){baixar(JSON.stringify({drivers:DB.drivers,registros:remoteRegistros,fotos:photoStore},null,2),'frota-docol-export-'+new Date().toISOString().slice(0,10)+'.json','application/json');}
 
 /* INIT */
-renderDriverSelect();
-renderKeypad();
+function initLogin(){
+  // Garante que os elementos existem antes de renderizar
+  const sel = document.getElementById('driverSelect');
+  const kp  = document.getElementById('keypad');
+  if(sel && kp){
+    renderDriverSelect();
+    renderKeypad();
+  } else {
+    // Fallback: tenta novamente em 100ms (para browsers lentos / webviews)
+    setTimeout(initLogin, 100);
+  }
+}
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', initLogin);
+} else {
+  initLogin();
+}
 </script>
 </body>
 </html>
