@@ -816,6 +816,7 @@ const OPERATORS_SEED=[
 {id:'d147',name:'Zileide Vieira Alves',pin:'18284',perms:[]}
 ];
 
+const OPERATORS_SEED_VERSION='2026-07-20-perms-v2';
 function normEquipKey(s){s=String(s||'').split('(')[0];return s.replace(/[^0-9A-Za-z]/g,'').toUpperCase();}
 function driverCanUse(driver,cartLabel){if(!driver||!driver.perms||!driver.perms.length)return false;const key=normEquipKey(cartLabel);return driver.perms.includes(key);}
 
@@ -837,9 +838,9 @@ function loadLocalDB(){
   const raw=localStorage.getItem('frota_drivers_docol_v1');
   if(raw){try{
     const parsed=JSON.parse(raw);
-    if(parsed&&Array.isArray(parsed.drivers)&&parsed.drivers.length&&parsed.drivers[0].pin&&parsed.drivers[0].pin.length===5)return parsed;
+    if(parsed&&parsed.seedVersion===OPERATORS_SEED_VERSION&&Array.isArray(parsed.drivers)&&parsed.drivers.length)return parsed;
   }catch(e){}}
-  const seed={drivers:OPERATORS_SEED};
+  const seed={seedVersion:OPERATORS_SEED_VERSION,drivers:OPERATORS_SEED};
   localStorage.setItem('frota_drivers_docol_v1',JSON.stringify(seed));return seed;
 }
 let DB=loadLocalDB();
