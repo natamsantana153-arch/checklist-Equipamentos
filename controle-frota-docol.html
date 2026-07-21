@@ -651,7 +651,19 @@ const EQUIP_SEED=[
 ["4312-EM2","EMPILHADEIRA RETRÁTIL","INOX ESTOQUE CD"],["4312-EM3","EMPILHADEIRA RETRÁTIL","INOX ESTOQUE CD"],
 ["4312-EM4","PALETEIRA ELÉTRICA","Lado Cavaco"],["4312-EM5","PALETEIRA ELÉTRICA","MANUTENÇÃO"],
 ["EMP-032","TRANSPALETEIRA OPERADOR EMBARCADO","USINAGEM"],["SK417","PALETEIRA ELÉTRICA","USINAGEM"],
-["SK344","REBOCADOR OPERADOR SENTADO","USINAGEM"]
+["SK344","REBOCADOR OPERADOR SENTADO","USINAGEM"],
+["SK291","PALETEIRA ELÉTRICA",""],["SK293","PALETEIRA ELÉTRICA",""],["SK317","PALETEIRA ELÉTRICA",""],
+["SK324","EMPILHADEIRA ELÉTRICA CONTRABALANÇADA",""],["SK346","EMPILHADEIRA ELÉTRICA CONTRABALANÇADA",""],
+["SK409","SELETORA",""],
+["ZS-C-1392","EMPILHADEIRA CONTRABALANÇADA GLP (COMBUSTÃO)",""],
+["ZS-E-1415","EMPILHADEIRA ELÉTRICA CONTRABALANÇADA",""],
+["ZS-N-1414","EQUIPAMENTO",""],
+["ZS-E-1722","EMPILHADEIRA ELÉTRICA",""],
+["ZS-1716-48V","EMPILHADEIRA ELÉTRICA (48V)",""],
+["ZS-1719-48V","EMPILHADEIRA ELÉTRICA (48V)",""],
+["ZS-1721-48V","EMPILHADEIRA ELÉTRICA (48V)",""],
+["ZS-1724-48V","EMPILHADEIRA ELÉTRICA (48V)",""],
+["ZS-C-1723","EMPILHADEIRA CONTRABALANÇADA GLP (COMBUSTÃO)",""]
 ];
 
 const OPERATORS_SEED=[
@@ -1050,7 +1062,10 @@ function renderFleet(){
   const q=(document.getElementById('fleetSearch')?.value||'').trim().toLowerCase();
   const sf=document.getElementById('fleetStatusFilter')?.value||'all';
   const sec=document.getElementById('fleetSectorFilter')?.value||'all';
+  const driver=session?DB.drivers.find(d=>d.id===session.driverId):null;
+  const restrito=driver&&driver.perms&&driver.perms.length>0;
   const list=buildCarts().filter(c=>{
+    if(restrito&&!driverCanUse(driver,c.label)&&!(c.status==='uso'&&c.currentDriverName===session.driverName))return false;
     if(q&&!c.label.toLowerCase().includes(q)&&!(c.type||'').toLowerCase().includes(q))return false;
     if(sf!=='all'&&c.status!==sf)return false;
     if(sec!=='all'&&c.setor!==sec)return false;return true;
