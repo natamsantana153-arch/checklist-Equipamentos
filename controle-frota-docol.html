@@ -1152,16 +1152,22 @@ async function submitChecklist(){
   if(btn){btn.disabled=true;btn.textContent=cs.photos.length?'Enviando fotos...':'Salvando...';}
   try{
     const nf=cs.photos.length;
+    let resultado;
     if(cs.type==='retirada'){
       const obs=[cs.statusGood===false?('[AVARIA] '+cs.problemDesc):'',cs.notes||''].filter(Boolean).join(' | ');
-      await apiPost({acao:'retirar',equipamento:cs.cart.label,tipo:cs.cart.type,setor:cs.cart.setor||'',usuario:session.driverName,checklist:cs.statusGood===false?'AVARIA':'OK',observacoes:obs,fotos:cs.photos});
+      resultado=await apiPost({acao:'retirar',equipamento:cs.cart.label,tipo:cs.cart.type,setor:cs.cart.setor||'',usuario:session.driverName,checklist:cs.statusGood===false?'AVARIA':'OK',observacoes:obs,fotos:cs.photos});
     }else{
       const parts=[];if(cs.statusGood===false)parts.push('[AVARIA] '+cs.problemDesc);if(cs.motivoDevolucao)parts.push('Motivo: '+cs.motivoDevolucao);if(cs.notes)parts.push('Obs: '+cs.notes);
-      await apiPost({acao:'devolver',equipamento:cs.cart.label,usuario:session.driverName,observacoes:parts.join(' | '),fotos:cs.photos});
+      resultado=await apiPost({acao:'devolver',equipamento:cs.cart.label,usuario:session.driverName,observacoes:parts.join(' | '),fotos:cs.photos});
     }
     await syncFromBackend();
     if(nf){const alvo=localizarRegistro(cs.type,cs.cart.label);if(alvo){try{await savePhotosLocal(chaveReg(cs.type==='retirada'?'ret':'dev',alvo),cs.photos);}catch(e){console.warn(e);}}}
     checklistState=null;document.getElementById('checklistModal').classList.remove('show');renderAll();
+    if(nf&&resultado&&resultado.avisoFotos){
+      alert('Registro salvo, mas houve um problema com as fotos:\n\n'+resultado.avisoFotos+'\n\nO equipamento já está registrado normalmente — avise o administrador para verificar a permissão da pasta do Drive.');
+    }else if(nf&&resultado&&typeof resultado.fotosSalvas==='number'&&resultado.fotosSalvas<nf){
+      alert('Atenção: nem todas as fotos foram salvas no Drive ('+resultado.fotosSalvas+' de '+nf+').');
+    }
   }catch(err){alert('Não foi possível salvar.\n\n'+err.message);if(btn){btn.disabled=false;btn.textContent=lbl;}}
 }
 
@@ -1336,8 +1342,28 @@ function removeDriver(id){if(!confirm('Remover este operador?'))return;DB.driver
 async function rodarDiagnostico(){
   const out=document.getElementById('diagOut');out.style.display='block';const log=[],p=t=>{log.push(t);out.textContent=log.join('\n');};
   p('URL: '+CONFIG.API_URL);p('Lendo planilha...');
-  try{const regs=await apiListar();p('OK — '+regs.length+' registro(s).');p('Fotos: '+Object.keys(photoStore).length);p('Operadores: '+DB.drivers.length);regs.slice(-3).forEach(r=>p('  '+r.equipamento+' ret:'+r.dataRetirada+' dev:'+r.dataDevolucao));}
-  catch(err){p('ERRO: '+err.message);}
+  try{
+    const regs=await apiListar();
+    p('OK — '+regs.length+' registro(s) lidos da planilha.');
+    p('Cache local de fotos (aparelho): '+Object.keys(photoStore).length);
+    p('Operadores: '+DB.drivers.length);
+    p('');
+    p('Últimos 5 registros (fotos vindas do Drive via planilha):');
+    regs.slice(-5).forEach(r=>{
+      const nRet=(r.fotoRetirada||[]).length,nDev=(r.fotoDevolucao||[]).length;
+      p('  '+r.equipamento+' | ret:'+(r.dataRetirada||'—')+' (fotos:'+nRet+') | dev:'+(r.dataDevolucao||'—')+' (fotos:'+nDev+')');
+    });
+    const totalFotosDrive=regs.reduce((a,r)=>a+(r.fotoRetirada||[]).length+(r.fotoDevolucao||[]).length,0);
+    p('');
+    p('Total de fotos no Drive (via planilha): '+totalFotosDrive);
+    if(totalFotosDrive===0){
+      p('');
+      p('Nenhuma foto encontrada na planilha ainda. Se você já tirou fotos e o');
+      p('problema persiste, confira: 1) se o Script foi reimplantado como');
+      p('"Nova versão" após colar o código novo; 2) rode testarUploadFoto()');
+      p('direto no editor do Apps Script para confirmar a permissão da pasta.');
+    }
+  }catch(err){p('ERRO ao conectar: '+err.message);}
 }
 
 /* HTML COM FOTOS */
