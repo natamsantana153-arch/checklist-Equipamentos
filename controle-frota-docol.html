@@ -906,9 +906,27 @@ function photosFor(pfx,r){
 }
 
 /* BACKEND */
-async function apiListar(){const res=await fetch(CONFIG.API_URL+'?acao=listar');const d=await res.json();if(!d.ok)throw new Error(d.erro||'Falha.');return d.registros;}
-async function apiPost(payload){const res=await fetch(CONFIG.API_URL,{method:'POST',body:JSON.stringify(payload)});const d=await res.json();if(!d.ok)throw new Error(d.erro||'Falha.');return d;}
+const VERSAO_SCRIPT_ESPERADA='fotos-drive-2026-07-25-v3';
+let versaoScriptDetectada=null,avisoVersaoMostrado=false;
+async function apiListar(){const res=await fetch(CONFIG.API_URL+'?acao=listar');const d=await res.json();if(!d.ok)throw new Error(d.erro||'Falha.');if(d.versao)versaoScriptDetectada=d.versao;return d.registros;}
+async function apiPost(payload){const res=await fetch(CONFIG.API_URL,{method:'POST',body:JSON.stringify(payload)});const d=await res.json();if(!d.ok)throw new Error(d.erro||'Falha.');if(d.versao)versaoScriptDetectada=d.versao;return d;}
+async function apiVersao(){try{const res=await fetch(CONFIG.API_URL+'?acao=versao');const d=await res.json();return d&&d.ok?d.versao:null;}catch(e){return null;}}
 async function syncFromBackend(){remoteRegistros=await apiListar();}
+function checarVersaoScript(){
+  if(avisoVersaoMostrado)return;
+  if(versaoScriptDetectada&&versaoScriptDetectada!==VERSAO_SCRIPT_ESPERADA){
+    avisoVersaoMostrado=true;
+    alert('⚠️ O Google Apps Script (backend) está com uma versão DESATUALIZADA.\n\n'+
+      'Versão esperada: '+VERSAO_SCRIPT_ESPERADA+'\nVersão detectada: '+versaoScriptDetectada+'\n\n'+
+      'As FOTOS não vão sincronizar entre operadores até isso ser corrigido.\n\n'+
+      'Peça para o administrador: no Apps Script, Implantar → Gerenciar implantações → editar (lápis) → Versão: "Nova versão" → Implantar.');
+  }else if(!versaoScriptDetectada){
+    avisoVersaoMostrado=true;
+    alert('⚠️ Não foi possível confirmar a versão do Script (backend antigo, sem suporte a esse recurso).\n\n'+
+      'Isso indica que o Apps Script ainda não foi reimplantado como "Nova versão" com o código mais recente — por isso as fotos não estão indo para o Drive/planilha.\n\n'+
+      'Peça para o administrador: Implantar → Gerenciar implantações → editar (lápis) → Versão: "Nova versão" → Implantar.');
+  }
+}
 function parseDataBR(str){
   if(!str)return null;const[d,t]=String(str).split(' ');
   if(!d||!d.includes('/'))return null;
@@ -990,7 +1008,7 @@ async function enterApp(){
   document.getElementById('fleetGrid').innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="big">◌</div>Carregando dados...</div>';
   historyPage=1;occurrencePage=1;
   await loadPhotoIndex();
-  try{await syncFromBackend();}catch(err){alert('Não foi possível conectar à planilha.\n\n'+err.message);}
+  try{await syncFromBackend();checarVersaoScript();}catch(err){alert('Não foi possível conectar à planilha.\n\n'+err.message);}
   populateSectorFilters();renderAll();
 }
 function requireAdminPassword(){
@@ -1341,7 +1359,21 @@ function removeDriver(id){if(!confirm('Remover este operador?'))return;DB.driver
 /* DIAGNÓSTICO */
 async function rodarDiagnostico(){
   const out=document.getElementById('diagOut');out.style.display='block';const log=[],p=t=>{log.push(t);out.textContent=log.join('\n');};
-  p('URL: '+CONFIG.API_URL);p('Lendo planilha...');
+  p('URL: '+CONFIG.API_URL);
+  p('Versão do Script esperada: '+VERSAO_SCRIPT_ESPERADA);
+  const versaoRemota=await apiVersao();
+  if(versaoRemota===VERSAO_SCRIPT_ESPERADA){
+    p('Versão do Script detectada: '+versaoRemota+'  ✅ ATUALIZADO');
+  }else if(versaoRemota){
+    p('Versão do Script detectada: '+versaoRemota+'  ⚠️ DIFERENTE DA ESPERADA — reimplante como "Nova versão".');
+  }else{
+    p('Versão do Script detectada: (não respondeu)  ❌ SCRIPT DESATUALIZADO/ANTIGO');
+    p('   → Isso confirma que o Script publicado ainda não tem o código de fotos.');
+    p('   → Solução: Apps Script → Implantar → Gerenciar implantações → editar');
+    p('     (lápis) → Versão: "Nova versão" → Implantar.');
+  }
+  p('');
+  p('Lendo planilha...');
   try{
     const regs=await apiListar();
     p('OK — '+regs.length+' registro(s) lidos da planilha.');
